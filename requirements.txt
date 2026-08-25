@@ -1,0 +1,15 @@
+# SecEval AI - Framework d'Évaluation Automatique de Sécurité Web
+# Fichier de dépendances Python
+
+Django>=5.0,<6.2
+asgiref>=3.8.0
+sqlparse>=0.5.0
+tzdata>=2024.1
+
+# Utilitaires & Formats
+requests>=2.31.0
+urllib3>=2.2.0
+
+# Support optionnel pour génération PDF & exports avancés
+# reportlab>=4.1.0
+# openpyxl>=3.1.2

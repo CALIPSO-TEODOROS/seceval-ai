@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecEval AI - Dashboard SaaS</title>
+    <style>
+        :root {
+            /* Light Theme (Datafy SaaS Style - Par défaut) */
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-secondary: #475569;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-light: rgba(99, 102, 241, 0.08);
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.06);
+            --border-radius: 16px;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme */
+            --bg-color: #0b0f19;
+            --sidebar-bg: #111827;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-secondary: #cbd5e1;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --accent-light: rgba(129, 140, 248, 0.15);
+            --success: #34d399;
+            --success-light: rgba(52, 211, 153, 0.15);
+            --warning: #fbbf24;
+            --warning-light: rgba(251, 191, 36, 0.15);
+            --danger: #f87171;
+            --danger-light: rgba(248, 113, 113, 0.15);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Sidebar Navigation Datafy */
+        .sidebar {
+            width: 270px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            display: flex; flex-direction: column;
+            padding: 24px 18px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Centered & Enlarged Logo Container */
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 36px;
+            padding: 0;
+            text-align: center;
+        }
+
+        .sidebar-logo-img {
+            height: 65px;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="light"] .sidebar-logo-img {
+            filter: drop-shadow(0 3px 8px rgba(99, 102, 241, 0.15));
+        }
+
+        [data-theme="dark"] .sidebar-logo-img {
+            background-color: rgba(255, 255, 255, 0.96);
+            padding: 6px 12px;
+            border-radius: 12px;
+            box-shadow: 0 0 18px rgba(129, 140, 248, 0.35);
+        }
+
+        .nav-links {
+            list-style: none; padding: 0; margin: 0;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+
+        .nav-item {
+            padding: 11px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex; align-items: center; gap: 12px;
+            font-weight: 600; font-size: 0.92rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .nav-item.active {
+            background-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* Main Section */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Top Header Datafy */
+        .header {
+            height: 72px;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0 32px;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: var(--sidebar-bg);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .header-title h2 { margin: 0; font-size: 1.35rem; font-weight: 700; }
+
+        .header-controls {
+            display: flex; align-items: center; gap: 16px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; font-size: 0.85rem; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle-btn:hover { border-color: var(--accent); }
+
+        .user-badge {
+            background-color: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 16px; border-radius: 20px;
+            font-size: 0.88rem; font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #ffffff; border: none;
+            padding: 9px 18px; border-radius: 10px;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover { background-color: var(--input-bg); transform: none; }
+
+        .btn-danger { background: #ef4444; color: #fff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25); }
+        .btn-danger:hover { background: #dc2626; }
+
+        .content-body { padding: 32px; flex: 1; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Datafy Style KPI Stat Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 22px;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label { color: var(--text-muted); font-size: 0.88rem; font-weight: 600; }
+
+        .trend-pill {
+            background: var(--success-light);
+            color: var(--success);
+            padding: 3px 8px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 700;
+        }
+
+        .trend-pill.danger { background: var(--danger-light); color: var(--danger); }
+
+        .stat-value { font-size: 2.2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+
+        /* Charts & Card Container */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px; margin-bottom: 28px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 26px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .card-title { margin: 0; font-size: 1.15rem; font-weight: 700; }
+
+        /* Severity Bar Chart */
+        .severity-bar-wrapper { display: flex; flex-direction: column; gap: 14px; }
+        .severity-item { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; }
+        .severity-label { width: 90px; color: var(--text-muted); font-weight: 600; }
+        .severity-progress-bg { flex: 1; height: 10px; background: var(--input-bg); border-radius: 6px; overflow: hidden; }
+        .severity-progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+        .severity-count { width: 40px; text-align: right; font-weight: 700; }
+
+        /* SVG Trend Curve Datafy */
+        .trend-chart-container {
+            width: 100%; height: 190px;
+            display: flex; align-items: flex-end; justify-content: center;
+            position: relative; padding-top: 10px;
+        }
+
+        svg.trend-svg { width: 100%; height: 100%; overflow: visible; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--card-border); }
+        th { color: var(--text-muted); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:hover td { background-color: var(--accent-light); }
+        tr:last-child td { border-bottom: none; }
+
+        /* Badges Datafy */
+        .badge {
+            padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+        }
+
+        .badge-CRITIQUE { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); }
+        .badge-ELEVEE { background: var(--warning-light); color: var(--warning); border: 1px solid var(--warning); }
+        .badge-MOYENNE { background: var(--accent-light); color: var(--accent); }
+        .badge-FAIBLE { background: rgba(148, 163, 184, 0.15); color: #64748b; }
+        .badge-INFORMATION { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+
+        .badge-ACTIF { background: var(--success-light); color: var(--success); }
+        .badge-INVITE { background: var(--accent-light); color: var(--accent); }
+        .badge-SUSPENDU { background: var(--warning-light); color: var(--warning); }
+        .badge-EN_COURS { background: var(--accent-light); color: var(--accent); }
+        .badge-TERMINE { background: var(--success-light); color: var(--success); }
+        .badge-PUBLIE { background: var(--success-light); color: var(--success); }
+        .badge-ENVOYE { background: var(--success-light); color: var(--success); }
+
+        .progress-bar-container {
+            width: 100%; background-color: var(--input-bg);
+            border-radius: 8px; height: 8px; overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #6366f1, #10b981);
+            width: 0%; transition: width 0.3s ease;
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.88rem; font-weight: 600; }
+        .form-control {
+            width: 100%; padding: 11px 16px;
+            background-color: var(--input-bg); border: 1px solid var(--input-border);
+            border-radius: 10px; color: var(--text-main); font-size: 0.92rem;
+            transition: border-color 0.2s ease;
+        }
+        .form-control:focus { outline: none; border-color: var(--accent); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; }
+        .toast {
+            background-color: var(--card-bg); border: 1px solid var(--accent);
+            color: var(--text-main); padding: 14px 22px; border-radius: 12px;
+            margin-top: 10px; box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.3s ease; font-weight: 600;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation Datafy Style -->
+    <div class="sidebar">
+        <div class="logo">
+            <img src="/media/seceval_logo.png" alt="SecEval AI Logo" class="sidebar-logo-img">
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchTab('dashboard')">Vue d'ensemble</li>
+            <li class="nav-item" onclick="switchTab('logs')">Journal d'Activité</li>
+            <li class="nav-item" onclick="switchTab('notifs')">Notifications & Alertes</li>
+            <li class="nav-item" onclick="switchTab('reports')">Rapports d'Évaluation</li>
+            <li class="nav-item" onclick="switchTab('vulns')">Vulnérabilités & PoC</li>
+            <li class="nav-item" onclick="switchTab('recon')">Reconnaissance Technique</li>
+            <li class="nav-item" onclick="switchTab('audits')">Audits de Sécurité</li>
+            <li class="nav-item" onclick="switchTab('projects')">Projets & Cibles</li>
+            <li class="nav-item" onclick="switchTab('users')">Utilisateurs & Statuts</li>
+            <li class="nav-item" onclick="switchTab('roles')">Rôles & Permissions</li>
+            <li class="nav-item" onclick="switchTab('members')">Membres de Projet</li>
+            <li class="nav-item" onclick="switchTab('profile')">👤 Mon Profil</li>
+        </ul>
+    </div>
+
+    <!-- Main Section -->
+    <div class="main-content">
+        <!-- Top Header Datafy Style -->
+        <div class="header">
+            <div class="header-title">
+                <h2 id="page-title">Vue d'ensemble</h2>
+            </div>
+            <div class="header-controls">
+                <button class="theme-toggle-btn" onclick="toggleTheme()">
+                    <span id="theme-icon">☀️</span> <span id="theme-text">Mode Jour</span>
+                </button>
+                <div class="user-badge" id="logged-user-display">
+                    <span>👤 Chargement...</span>
+                </div>
+                <button class="btn btn-danger" onclick="handleLogout()">Se Déconnecter</button>
+            </div>
+        </div>
+
+        <div class="content-body">
+
+            <!-- TAB 1: DASHBOARD EXECUTIVE (Datafy Style) -->
+            <div id="tab-dashboard" class="tab-pane active">
+
+                <!-- 4 Top Executive KPI Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Score Moyen de Sécurité</span>
+                            <span class="trend-pill">+12.5%</span>
+                        </div>
+                        <div class="stat-value" id="kpi-score-avg">0.0 / 100</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Failles Critiques & Élevées</span>
+                            <span class="trend-pill danger">Action Requise</span>
+                        </div>
+                        <div class="stat-value" id="kpi-vulns-critical">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Audits en Cours</span>
+                            <span class="trend-pill">+8.2%</span>
+                        </div>
+                        <div class="stat-value" id="kpi-audits-running">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Projets d'Évaluation Actifs</span>
+                            <span class="trend-pill">+15.3%</span>
+                        </div>
+                        <div class="stat-value" id="kpi-projects-active">0</div>
+                    </div>
+                </div>
+
+                <!-- 2 Visual Charts Side-by-Side -->
+                <div class="chart-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Répartition des Vulnérabilités par Gravité</h3>
+                        </div>
+                        <div class="severity-bar-wrapper">
+                            <div class="severity-item">
+                                <span class="severity-label" style="color:#ef4444;">Critique</span>
+                                <div class="severity-progress-bg"><div id="bar-critique" class="severity-progress-fill" style="background:#ef4444; width:0%;"></div></div>
+                                <span class="severity-count" id="count-critique">0</span>
+                            </div>
+                            <div class="severity-item">
+                                <span class="severity-label" style="color:#f59e0b;">Élevée</span>
+                                <div class="severity-progress-bg"><div id="bar-elevee" class="severity-progress-fill" style="background:#f59e0b; width:0%;"></div></div>
+                                <span class="severity-count" id="count-elevee">0</span>
+                            </div>
+                            <div class="severity-item">
+                                <span class="severity-label" style="color:#6366f1;">Moyenne</span>
+                                <div class="severity-progress-bg"><div id="bar-moyenne" class="severity-progress-fill" style="background:#6366f1; width:0%;"></div></div>
+                                <span class="severity-count" id="count-moyenne">0</span>
+                            </div>
+                            <div class="severity-item">
+                                <span class="severity-label" style="color:#64748b;">Faible</span>
+                                <div class="severity-progress-bg"><div id="bar-faible" class="severity-progress-fill" style="background:#64748b; width:0%;"></div></div>
+                                <span class="severity-count" id="count-faible">0</span>
+                            </div>
+                            <div class="severity-item">
+                                <span class="severity-label" style="color:#9ca3af;">Info</span>
+                                <div class="severity-progress-bg"><div id="bar-info" class="severity-progress-fill" style="background:#9ca3af; width:0%;"></div></div>
+                                <span class="severity-count" id="count-info">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Évolution des performances de sécurité</h3>
+                        </div>
+                        <div class="trend-chart-container">
+                            <svg class="trend-svg" viewBox="0 0 500 160" id="trend-svg">
+                                <!-- Rendered dynamically via JS -->
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2 Side-by-Side Feeds: Alerts & Recent Vulns -->
+                <div class="chart-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Dernières Alertes & Notifications Prioritaires</h3>
+                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('notifs')">Voir Tout</button>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Canal</th>
+                                    <th>Sujet / Alerte</th>
+                                    <th>Destinataire</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-recent-notifs"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Dernières Vulnérabilités Identifiées</h3>
+                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('vulns')">PoC / Patch</button>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Gravité</th>
+                                    <th>Titre & CWE</th>
+                                    <th>Score CVSS</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-recent-vulns"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Audits Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Campagnes d'Audits Récents</h3>
+                        <button class="btn btn-outline" onclick="switchTab('audits')">Gérer les Audits</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type d'Audit</th>
+                                <th>Cible</th>
+                                <th>Projet</th>
+                                <th>Statut</th>
+                                <th>Progression</th>
+                                <th>Score Sécurité</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-recent-audits"></tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Activity Logs Feed -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Journal d'Activité Récent (Audit Trail)</h3>
+                        <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('logs')">Consulter Logs</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date & Heure</th>
+                                <th>Utilisateur</th>
+                                <th>Action</th>
+                                <th>Ressource Ciblée</th>
+                                <th>Adresse IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-recent-logs"></tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- TAB: LOGS -->
+            <div id="tab-logs" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Enregistrer un Événement d'Activité (`JournalActivite.enregistrer()`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateLog(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Utilisateur Initiateur (`Utilisateur`)</label>
+                                <select id="log-user-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Action Effectuée</label>
+                                <input type="text" id="log-action" class="form-control" placeholder="ex: CREATION_PROJET ou SCAN_ACTIF" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ressource Ciblée</label>
+                                <input type="text" id="log-ressource" class="form-control" placeholder="ex: Projet Fintech / API Target" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Adresse IP Source</label>
+                                <input type="text" id="log-ip" class="form-control" value="192.168.1.100">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Détails Techniques / Contextuels</label>
+                            <input type="text" id="log-details" class="form-control" placeholder="Détails de l'opération de sécurité">
+                        </div>
+                        <button type="submit" class="btn">Enregistrer l'Événement</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Journaux d'Activité & Audit Logs</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date & Heure</th>
+                                <th>Utilisateur</th>
+                                <th>Action</th>
+                                <th>Ressource Ciblée</th>
+                                <th>Adresse IP</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: NOTIFICATIONS -->
+            <div id="tab-notifs" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Envoyer une Notification de Sécurité (`Notification.envoyer()`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateNotification(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Destinataire (`Utilisateur`)</label>
+                                <select id="notif-user-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Canal d'Envoi (`CanalNotification`)</label>
+                                <select id="notif-canal-select" class="form-control">
+                                    <option value="EMAIL">Email</option>
+                                    <option value="SLACK">Webhook Slack</option>
+                                    <option value="TELEGRAM">Bot Telegram</option>
+                                    <option value="DISCORD">Webhook Discord</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Sujet / Titre de l'Alerte</label>
+                            <input type="text" id="notif-sujet" class="form-control" placeholder="ex: [ALERT] Injection SQL Détectée" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message de la Notification</label>
+                            <input type="text" id="notif-message" class="form-control" placeholder="Détails de l'alerte ou résultats d'audit" required>
+                        </div>
+                        <button type="submit" class="btn">Envoyer la Notification</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Historique des Notifications & Alertes</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Canal</th>
+                                <th>Destinataire</th>
+                                <th>Sujet</th>
+                                <th>Statut</th>
+                                <th>Date d'Envoi</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notifs-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: RAPPORTS -->
+            <div id="tab-reports" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Générer un Nouveau Rapport (`Rapport.generer()`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateReport(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sélectionner l'Audit d'Évaluation</label>
+                                <select id="report-audit-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Titre du Rapport</label>
+                                <input type="text" id="report-titre" class="form-control" placeholder="ex: Rapport d'Audit Pentest Officiel" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Format d'Export (`FormatRapport`)</label>
+                            <select id="report-format-select" class="form-control">
+                                <option value="HTML">Page Web Interactive (HTML)</option>
+                                <option value="JSON">Fichier Structuré (JSON)</option>
+                                <option value="PDF">Document Officiel (PDF)</option>
+                                <option value="CSV">Matrice de Failles (CSV)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Générer le Rapport</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Rapports d'Évaluation de Sécurité Générés</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Format</th>
+                                <th>Titre du Rapport</th>
+                                <th>Cible</th>
+                                <th>Score Final</th>
+                                <th>Statut</th>
+                                <th>Actions Métier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: VULNERABILITES & POC -->
+            <div id="tab-vulns" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Signaler / Détecter une Vulnérabilité (`Vulnerabilite`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateVuln(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sélectionner l'Audit</label>
+                                <select id="vuln-audit-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Titre de la Vulnérabilité</label>
+                                <input type="text" id="vuln-titre" class="form-control" placeholder="ex: Injection SQL sur /api/login" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Gravité / Sévérité</label>
+                                <select id="vuln-gravite" class="form-control">
+                                    <option value="CRITIQUE">Critique (CVSS 9.0 - 10.0)</option>
+                                    <option value="ELEVEE">Élevée (CVSS 7.0 - 8.9)</option>
+                                    <option value="MOYENNE" selected>Moyenne (CVSS 4.0 - 6.9)</option>
+                                    <option value="FAIBLE">Faible (CVSS 0.1 - 3.9)</option>
+                                    <option value="INFORMATION">Information (CVSS 0.0)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Score CVSS (0.0 à 10.0)</label>
+                                <input type="number" step="0.1" id="vuln-cvss" class="form-control" value="7.5" min="0" max="10">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Code CWE (ex: CWE-89, CWE-79)</label>
+                                <input type="text" id="vuln-cwe" class="form-control" placeholder="CWE-89">
+                            </div>
+                            <div class="form-group">
+                                <label>Niveau de Confiance (%)</label>
+                                <input type="number" id="vuln-confiance" class="form-control" value="100" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description Détaillée</label>
+                            <input type="text" id="vuln-desc" class="form-control" placeholder="Description de l'impact technique et du contexte">
+                        </div>
+                        <button type="submit" class="btn">Enregistrer la Vulnérabilité</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Vulnérabilités Identifiées dans les Audits</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gravité</th>
+                                <th>Titre & CWE</th>
+                                <th>Score CVSS</th>
+                                <th>Cible</th>
+                                <th>Statut</th>
+                                <th>Actions Métier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vulns-table-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="card" id="vuln-inspect-card" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title" id="vuln-inspect-title">Détails, Preuves (PoC) & Correctifs</h3>
+                    </div>
+                    <p id="vuln-inspect-desc" style="color: var(--text-muted);"></p>
+
+                    <div class="form-row">
+                        <div>
+                            <h4>Preuves PoC (`Preuve`)</h4>
+                            <table style="margin-bottom:15px;">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Contenu du Payload / HTTP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vuln-preuves-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <h4>Recommandations de Patch (`Recommandation`)</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Priorité</th>
+                                        <th>Composant</th>
+                                        <th>Correctif & Validation</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vuln-recs-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: RECONNAISSANCE TECHNIQUE -->
+            <div id="tab-recon" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Scanner & Analyser la Reconnaissance Technique d'un Audit</h3>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sélectionner l'Audit d'Évaluation</label>
+                            <select id="recon-audit-select" class="form-control" onchange="loadReconForSelectedAudit()"></select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button class="btn" style="width: 100%; height: 42px;" onclick="triggerAutomatedReconScan()">Lancer l'Empreinte Automatique (Agent IA)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Technologies Détectées (`TechnologieDetectee`)</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Technologie</th>
+                                    <th>Version</th>
+                                    <th>Catégorie</th>
+                                    <th>Confiance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recon-tech-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Services & Ports Ouverts (`ServiceDetecte`)</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Port</th>
+                                    <th>Service</th>
+                                    <th>Version</th>
+                                    <th>État</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recon-services-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Certificats SSL / TLS (`CertificatSSL`)</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sujet (CN)</th>
+                                <th>Émetteur (CA)</th>
+                                <th>Date Début</th>
+                                <th>Date Expiration</th>
+                                <th>Protocole</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recon-ssl-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: AUDITS -->
+            <div id="tab-audits" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lancer / Planifier un Audit de Sécurité (`Audit.demarrer()`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateAudit(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Titre de l'Audit</label>
+                                <input type="text" id="audit-titre" class="form-control" placeholder="ex: Audit Pentest OWASP Annuel 2026" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Type d'Audit Sécurité</label>
+                                <select id="audit-type-select" class="form-control">
+                                    <option value="STANDARD">Standard (OWASP Top 10)</option>
+                                    <option value="LEGER">Léger (Reconnaissance rapide)</option>
+                                    <option value="APPROFONDI">Approfondi (Pentest complet)</option>
+                                    <option value="API">API REST & GraphQL</option>
+                                    <option value="SSL_TLS">SSL / TLS & Chiffrement</option>
+                                    <option value="CONFIGURATION">Audit de Configuration & Headers</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sélectionner le Projet</label>
+                                <select id="audit-proj-select" class="form-control" onchange="updateCiblesForAudit()" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sélectionner la Cible d'Évaluation</label>
+                                <select id="audit-cible-select" class="form-control" required></select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Type de Planification</label>
+                                <select id="audit-planif-select" class="form-control" onchange="togglePlanificationOptions()">
+                                    <option value="UNIQUE">Planification Unique (Ponctuelle)</option>
+                                    <option value="REPETITIVE">Planification Répétitive (Récurrente)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="group-frequence" style="display: none;">
+                                <label>Fréquence de Récurrence</label>
+                                <select id="audit-freq-select" class="form-control">
+                                    <option value="AUCUNE">Aucune récurrence</option>
+                                    <option value="QUOTIDIEN">Quotidien (Toutes les 24h)</option>
+                                    <option value="HEBDOMADAIRE" selected>Hebdomadaire (Toutes les semaines)</option>
+                                    <option value="MENSUEL">Mensuel (Tous les mois)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" id="group-heure">
+                                <label id="label-heure">Heure d'Exécution Programmée (Ponctuelle)</label>
+                                <input type="time" id="audit-heure" class="form-control" value="14:30">
+                            </div>
+                            <div class="form-group">
+                                <label>URL Trigger Webhook n8n (Intégration d'Automations)</label>
+                                <input type="url" id="audit-n8n-webhook" class="form-control" placeholder="https://n8n.votredomaine.com/webhook/audit-trigger">
+                            </div>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label>Description du Contexte & Objectifs Métiers (Transmis au Trigger n8n)</label>
+                            <input type="text" id="audit-contexte" class="form-control" placeholder="Contextualisation technique et règles d'engagement de l'évaluation">
+                        </div>
+
+                        <button type="submit" class="btn">Créer & Exécuter l'Audit</button>
+                    </form>
+
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Campagnes d'Audits en Cours & Exécutées</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Titre & Contexte</th>
+                                <th>Type & Planification</th>
+                                <th>Cible / Projet</th>
+                                <th>Statut</th>
+                                <th>Progression</th>
+                                <th>Score</th>
+                                <th>Actions Métier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audits-table-body"></tbody>
+                    </table>
+                </div>
+
+
+                <div class="card" id="audit-plan-details-card" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title" id="audit-plan-title">Plan d'Audit Détaillé (`PlanAudit`)</h3>
+                    </div>
+                    <p id="audit-plan-desc" style="color: var(--text-muted);"></p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ordre</th>
+                                <th>Nom de l'Étape (`EtapeAudit`)</th>
+                                <th>Statut d'Exécution</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-etapes-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: PROJETS & CIBLES -->
+            <div id="tab-projects" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Créer un Nouveau Projet (`Projet.creer()`)</h3>
+                    </div>
+                    <form onsubmit="handleCreateProject(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nom du Projet</label>
+                                <input type="text" id="new-proj-nom" class="form-control" placeholder="ex: Audit Sécurité Banque" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Organisation / Client</label>
+                                <input type="text" id="new-proj-org" class="form-control" placeholder="ex: FintechCorp" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="new-proj-desc" class="form-control" placeholder="Objectifs et périmètre de l'évaluation">
+                        </div>
+                        <button type="submit" class="btn">Créer le Projet</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Liste des Projets d'Évaluation</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Organisation</th>
+                                <th>Statut</th>
+                                <th>Nombre de Cibles</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Ajouter une Cible (`Cible`)</h3>
+                        </div>
+                        <form onsubmit="handleCreateCible(event)">
+                            <div class="form-group">
+                                <label>Sélectionner le Projet</label>
+                                <select id="cible-proj-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valeur (URL, IP, Domaine)</label>
+                                <input type="text" id="cible-valeur" class="form-control" placeholder="https://target.com ou 192.168.1.1" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Type de Cible</label>
+                                    <select id="cible-type" class="form-control">
+                                        <option value="URL">URL Web</option>
+                                        <option value="DOMAINE">Nom de Domaine</option>
+                                        <option value="ADRESSE_IP">Adresse IP</option>
+                                        <option value="API_REST">API REST</option>
+                                        <option value="API_GRAPHQL">API GraphQL</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Environnement</label>
+                                    <select id="cible-env" class="form-control">
+                                        <option value="DEVELOPPEMENT">Développement</option>
+                                        <option value="TEST">Test / QA</option>
+                                        <option value="PREPRODUCTION">Pré-production</option>
+                                        <option value="PRODUCTION">Production</option>
+                                        <option value="LABORATOIRE">Laboratoire</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn">Ajouter la Cible</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Autorisation de Test (`AutorisationCible`)</h3>
+                        </div>
+                        <form onsubmit="handleCreateAutorisation(event)">
+                            <div class="form-group">
+                                <label>Sélectionner la Cible</label>
+                                <select id="auth-cible-select" class="form-control" required></select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Date Début</label>
+                                    <input type="date" id="auth-date-debut" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Date Fin</label>
+                                    <input type="date" id="auth-date-fin" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Preuve (Réf. Document / Signataire)</label>
+                                <input type="text" id="auth-preuve" class="form-control" placeholder="DOC-AUTH-2026-001.pdf" required>
+                            </div>
+                            <div class="form-group">
+                                <label><input type="checkbox" id="auth-tests-actifs"> Tests destructifs / scans actifs autorisés</label>
+                            </div>
+                            <button type="submit" class="btn">Valider l'Autorisation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: UTILISATEURS -->
+            <div id="tab-users" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Liste des Utilisateurs</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Statut</th>
+                                <th>Dernière Connexion</th>
+                                <th>Rôles</th>
+                                <th>Changer Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: ROLES & PERMISSIONS -->
+            <div id="tab-roles" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Créer un Rôle</h3>
+                    </div>
+                    <form onsubmit="handleCreateRole(event)">
+                        <div class="form-group">
+                            <label>Nom du Rôle</label>
+                            <input type="text" id="new-role-nom" class="form-control" placeholder="ex: Auditeur Sécurité" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="new-role-desc" class="form-control" placeholder="Description des privilèges">
+                        </div>
+                        <button type="submit" class="btn">Enregistrer le Rôle</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Rôles Définis</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rôle</th>
+                                <th>Description</th>
+                                <th>Permissions Associées</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roles-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: MEMBRES DE PROJET -->
+            <div id="tab-members" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Affecter un Membre au Projet (`MembreProjet`)</h3>
+                    </div>
+                    <form onsubmit="handleAssignMember(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sélectionner l'Utilisateur</label>
+                                <select id="assign-member-user" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sélectionner le Projet</label>
+                                <select id="assign-member-project" class="form-control"></select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">Affecter au Projet</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Membres Affectés (`MembreProjet`)</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Date d'affectation</th>
+                                <th>Statut Membre</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: MON PROFIL -->
+            <div id="tab-profile" class="tab-pane">
+                <div class="card" style="max-width: 550px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Modifier Mon Profil (`modifierProfil`)</h3>
+                    </div>
+                    <form onsubmit="handleUpdateProfile(event)">
+                        <div class="form-group">
+                            <label>Nom complet</label>
+                            <input type="text" id="profile-nom" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Adresse Email</label>
+                            <input type="email" id="profile-email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau Mot de Passe (laisser vide si inchangé)</label>
+                            <input type="password" id="profile-password" class="form-control" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn">Mettre à Jour</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        let currentUser = null;
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.getElementById('theme-icon').innerText = theme === 'dark' ? '🌙' : '☀️';
+            document.getElementById('theme-text').innerText = theme === 'dark' ? 'Mode Nuit' : 'Mode Jour';
+            localStorage.setItem('theme', theme);
+            if (window.lastScores) renderSVGScoreTrend(window.lastScores);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            const titles = {
+                'dashboard': 'Vue d\'ensemble',
+                'logs': 'Journal d\'Activité & Audit Logs',
+                'notifs': 'Gestion des Notifications & Alertes',
+                'reports': 'Gestion des Rapports d\'Évaluation',
+                'vulns': 'Gestion des Vulnérabilités & PoC',
+                'recon': 'Reconnaissance Technique (Stack, Ports, SSL)',
+                'audits': 'Gestion des Audits de Sécurité',
+                'projects': 'Gestion des Projets & Cibles',
+                'users': 'Gestion des Utilisateurs',
+                'roles': 'Rôles & Permissions',
+                'members': 'Membres de Projet',
+                'profile': 'Mon Profil'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Gestion';
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    currentUser = await res.json();
+                    document.getElementById('logged-user-display').innerHTML = `<span>👤 <strong>${currentUser.nom}</strong> (${currentUser.email})</span>`;
+                    document.getElementById('profile-nom').value = currentUser.nom;
+                    document.getElementById('profile-email').value = currentUser.email;
+                } else {
+                    window.location.href = '/web/login/';
+                }
+            } catch (e) {
+                window.location.href = '/web/login/';
+            }
+        }
+
+        async function handleLogout() {
+            await fetch('/api/users/logout/', { method: 'POST' });
+            window.location.href = '/web/login/';
+        }
+
+        async function loadExecutiveDashboardStats() {
+            try {
+                const res = await fetch('/api/users/dashboard/stats/');
+                if (!res.ok) return;
+                const data = await res.json();
+                const k = data.kpis;
+
+                // Executive KPIs
+                document.getElementById('kpi-score-avg').innerText = `${k.score_moyen} / 100`;
+                document.getElementById('kpi-vulns-critical').innerText = `${k.vulns_critique + k.vulns_elevee}`;
+                document.getElementById('kpi-audits-running').innerText = `${k.audits_running}`;
+                document.getElementById('kpi-projects-active').innerText = `${k.projects_active}`;
+
+                // Severity Distribution Chart
+                const totalV = k.vulns_total || 1;
+                document.getElementById('count-critique').innerText = k.vulns_critique;
+                document.getElementById('bar-critique').style.width = `${(k.vulns_critique / totalV) * 100}%`;
+
+                document.getElementById('count-elevee').innerText = k.vulns_elevee;
+                document.getElementById('bar-elevee').style.width = `${(k.vulns_elevee / totalV) * 100}%`;
+
+                document.getElementById('count-moyenne').innerText = k.vulns_moyenne;
+                document.getElementById('bar-moyenne').style.width = `${(k.vulns_moyenne / totalV) * 100}%`;
+
+                document.getElementById('count-faible').innerText = k.vulns_faible;
+                document.getElementById('bar-faible').style.width = `${(k.vulns_faible / totalV) * 100}%`;
+
+                document.getElementById('count-info').innerText = k.vulns_info;
+                document.getElementById('bar-info').style.width = `${(k.vulns_info / totalV) * 100}%`;
+
+                // SVG Trend Curve Chart
+                window.lastScores = data.trend_scores;
+                renderSVGScoreTrend(data.trend_scores);
+
+                // Feeds
+                const notifTbody = document.getElementById('dash-recent-notifs');
+                notifTbody.innerHTML = '';
+                data.recent_notifs.forEach(n => {
+                    notifTbody.innerHTML += `<tr><td><span class="badge badge-INVITE">${n.canal}</span></td><td><strong>${n.sujet}</strong></td><td>${n.destinataire}</td><td><span class="badge badge-${n.statut}">${n.statut}</span></td></tr>`;
+                });
+
+                const vulnTbody = document.getElementById('dash-recent-vulns');
+                vulnTbody.innerHTML = '';
+                data.recent_vulns.forEach(v => {
+                    vulnTbody.innerHTML += `<tr><td><span class="badge badge-${v.gravite}">${v.gravite}</span></td><td><strong>${v.titre}</strong></td><td><strong>${v.scoreCVSS}/10</strong></td><td><span class="badge badge-${v.statut}">${v.statut_display}</span></td></tr>`;
+                });
+
+                const auditsTbody = document.getElementById('dashboard-recent-audits');
+                auditsTbody.innerHTML = '';
+                data.recent_audits.forEach(a => {
+                    auditsTbody.innerHTML += `
+                        <tr>
+                            <td><strong>${a.type_display}</strong></td>
+                            <td>${a.cible}</td>
+                            <td>${a.projet}</td>
+                            <td><span class="badge badge-${a.statut}">${a.statut_display}</span></td>
+                            <td><div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div></td>
+                            <td><strong>${a.scoreSecurite}/100</strong></td>
+                        </tr>
+                    `;
+                });
+
+                const logsTbody = document.getElementById('dash-recent-logs');
+                logsTbody.innerHTML = '';
+                data.recent_logs.forEach(l => {
+                    logsTbody.innerHTML += `<tr><td>${new Date(l.dateAction).toLocaleString()}</td><td><strong>${l.utilisateur}</strong></td><td><span class="badge badge-INVITE">${l.action}</span></td><td>${l.ressource}</td><td><code>${l.adresseIP}</code></td></tr>`;
+                });
+
+            } catch (e) { console.error(e); }
+        }
+
+        function renderSVGScoreTrend(scores) {
+            const svg = document.getElementById('trend-svg');
+            if (!scores || scores.length === 0) {
+                scores = [70, 75, 82, 85, 88, 94, 100];
+            }
+            const width = 500; const height = 160;
+            const stepX = width / (scores.length - 1 || 1);
+            let pts = scores.map((val, idx) => {
+                const x = idx * stepX;
+                const y = height - (val / 100) * (height - 40) - 20;
+                return { x, y, val };
+            });
+
+            let pathD = `M 0 ${pts[0].y} `;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const cx = (p1.x + p2.x) / 2;
+                pathD += `C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y} `;
+            }
+
+            let areaD = `${pathD} L ${width} ${height} L 0 ${height} Z`;
+
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35" />
+                        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0" />
+                    </linearGradient>
+                </defs>
+                <path d="${areaD}" fill="url(#curveGradient)" />
+                <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="3.5" stroke-linecap="round" />
+                ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#6366f1" stroke="#ffffff" stroke-width="2" />`).join('')}
+            `;
+        }
+
+        async function loadLogsData() {
+            try {
+                const res = await fetch('/api/logs/');
+                const data = await res.json();
+
+                const tbody = document.getElementById('logs-table-body');
+                tbody.innerHTML = '';
+                data.logs.forEach(l => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${new Date(l.dateAction).toLocaleString()}</td>
+                            <td><strong>${l.utilisateur.nom}</strong></td>
+                            <td><span class="badge badge-INVITE">${l.action}</span></td>
+                            <td>${l.ressource}</td>
+                            <td><code>${l.adresseIP}</code></td>
+                            <td><small style="color:var(--text-muted);">${l.details || '-'}</small></td>
+                        </tr>
+                    `;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleCreateLog(e) {
+            e.preventDefault();
+            const utilisateur_id = document.getElementById('log-user-select').value;
+            const action = document.getElementById('log-action').value;
+            const ressource = document.getElementById('log-ressource').value;
+            const adresseIP = document.getElementById('log-ip').value;
+            const details = document.getElementById('log-details').value;
+
+            const res = await fetch('/api/logs/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ utilisateur_id, action, ressource, adresseIP, details })
+            });
+
+            if (res.ok) {
+                showToast('Activité enregistrée avec succès !');
+                loadLogsData();
+                loadExecutiveDashboardStats();
+            }
+        }
+
+        async function loadNotificationsData() {
+            try {
+                const res = await fetch('/api/notifications/');
+                const data = await res.json();
+
+                const tbody = document.getElementById('notifs-table-body');
+                tbody.innerHTML = '';
+                data.notifications.forEach(n => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><span class="badge badge-INVITE">${n.canal}</span></td>
+                            <td><strong>${n.destinataire.nom}</strong> (${n.destinataire.email})</td>
+                            <td><strong>${n.sujet}</strong></td>
+                            <td><span class="badge badge-${n.statut}">${n.statut}</span></td>
+                            <td>${n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : 'En attente'}</td>
+                            <td><button class="btn" style="padding: 4px 10px;" onclick="resendNotification('${n.id}')">Renvoyer</button></td>
+                        </tr>
+                    `;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleCreateNotification(e) {
+            e.preventDefault();
+            const destinataire_id = document.getElementById('notif-user-select').value;
+            const canal = document.getElementById('notif-canal-select').value;
+            const sujet = document.getElementById('notif-sujet').value;
+            const message = document.getElementById('notif-message').value;
+
+            const res = await fetch('/api/notifications/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ destinataire_id, canal, sujet, message })
+            });
+
+            if (res.ok) {
+                showToast('Notification envoyée avec succès !');
+                loadNotificationsData();
+                loadExecutiveDashboardStats();
+            }
+        }
+
+        async function resendNotification(id) {
+            const res = await fetch(`/api/notifications/${id}/envoyer/`, { method: 'POST' });
+            if (res.ok) { showToast('Notification renvoyée !'); loadNotificationsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function loadReportsData() {
+            try {
+                const res = await fetch('/api/reports/');
+                const data = await res.json();
+
+                const tbody = document.getElementById('reports-table-body');
+                tbody.innerHTML = '';
+                data.rapports.forEach(r => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><span class="badge badge-INVITE">${r.format}</span></td>
+                            <td><strong>${r.titre}</strong></td>
+                            <td>${r.audit.cible}</td>
+                            <td><strong>${r.scoreFinal}/100</strong></td>
+                            <td><span class="badge badge-${r.statut}">${r.statut_display}</span></td>
+                            <td>
+                                <button class="btn" style="padding: 4px 10px;" onclick="validerReport('${r.id}')">Valider</button>
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="publierReport('${r.id}')">Publier</button>
+                                <a href="/api/reports/${r.id}/telecharger/" target="_blank" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">Télécharger</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleCreateReport(e) {
+            e.preventDefault();
+            const audit_id = document.getElementById('report-audit-select').value;
+            const titre = document.getElementById('report-titre').value;
+            const format = document.getElementById('report-format-select').value;
+
+            const res = await fetch('/api/reports/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ audit_id, titre, format })
+            });
+
+            if (res.ok) {
+                showToast('Rapport généré avec succès !');
+                loadReportsData();
+                loadExecutiveDashboardStats();
+            }
+        }
+
+        async function validerReport(id) {
+            const res = await fetch(`/api/reports/${id}/valider/`, { method: 'POST' });
+            if (res.ok) { showToast('Rapport validé !'); loadReportsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function publierReport(id) {
+            const res = await fetch(`/api/reports/${id}/publier/`, { method: 'POST' });
+            if (res.ok) { showToast('Rapport publié !'); loadReportsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function loadVulnsData() {
+            try {
+                const res = await fetch('/api/vulns/');
+                const data = await res.json();
+
+                const tbody = document.getElementById('vulns-table-body');
+                tbody.innerHTML = '';
+                data.vulnerabilites.forEach(v => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><span class="badge badge-${v.gravite}">${v.gravite}</span></td>
+                            <td><strong>${v.titre}</strong> <br><small style="color:var(--text-muted);">${v.codeCWE || ''}</small></td>
+                            <td><strong>${v.scoreCVSS}/10</strong></td>
+                            <td>${v.audit.cible}</td>
+                            <td><span class="badge badge-${v.statut}">${v.statut_display}</span></td>
+                            <td>
+                                <button class="btn" style="padding: 4px 10px;" onclick="confirmerVuln('${v.id}')">Confirmer</button>
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="corrigeeVuln('${v.id}')">Corrigée</button>
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="fauxPositifVuln('${v.id}')">Faux Positif</button>
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="inspectVuln('${v.id}')">PoC / Patch</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleCreateVuln(e) {
+            e.preventDefault();
+            const audit_id = document.getElementById('vuln-audit-select').value;
+            const titre = document.getElementById('vuln-titre').value;
+            const gravite = document.getElementById('vuln-gravite').value;
+            const scoreCVSS = parseFloat(document.getElementById('vuln-cvss').value);
+            const codeCWE = document.getElementById('vuln-cwe').value;
+            const confiance = parseFloat(document.getElementById('vuln-confiance').value);
+            const description = document.getElementById('vuln-desc').value;
+
+            const res = await fetch('/api/vulns/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ audit_id, titre, gravite, scoreCVSS, codeCWE, confiance, description })
+            });
+
+            if (res.ok) {
+                showToast('Vulnérabilité signalée avec succès !');
+                loadVulnsData();
+                loadExecutiveDashboardStats();
+            }
+        }
+
+        async function confirmerVuln(id) {
+            const res = await fetch(`/api/vulns/${id}/confirmer/`, { method: 'POST' });
+            if (res.ok) { showToast('Vulnérabilité confirmée'); loadVulnsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function corrigeeVuln(id) {
+            const res = await fetch(`/api/vulns/${id}/corrigee/`, { method: 'POST' });
+            if (res.ok) { showToast('Vulnérabilité marquée comme corrigée'); loadVulnsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function fauxPositifVuln(id) {
+            const res = await fetch(`/api/vulns/${id}/faux-positif/`, { method: 'POST' });
+            if (res.ok) { showToast('Marquée comme faux positif'); loadVulnsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function inspectVuln(id) {
+            const res = await fetch(`/api/vulns/${id}/`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('vuln-inspect-card').style.display = 'block';
+                document.getElementById('vuln-inspect-title').innerText = `Détails PoC & Patch : [${data.gravite}] ${data.titre}`;
+                document.getElementById('vuln-inspect-desc').innerText = data.description;
+
+                const pTbody = document.getElementById('vuln-preuves-tbody');
+                pTbody.innerHTML = '';
+                if (data.preuves.length === 0) pTbody.innerHTML = '<tr><td colspan="2">Aucune preuve enregistrée.</td></tr>';
+                data.preuves.forEach(p => {
+                    pTbody.innerHTML += `<tr><td><span class="badge badge-INVITE">${p.type}</span></td><td><code>${p.contenu}</code></td></tr>`;
+                });
+
+                const rTbody = document.getElementById('vuln-recs-tbody');
+                rTbody.innerHTML = '';
+                if (data.recommandations.length === 0) rTbody.innerHTML = '<tr><td colspan="3">Aucune recommandation enregistrée.</td></tr>';
+                data.recommandations.forEach(r => {
+                    rTbody.innerHTML += `<tr><td><span class="badge badge-${r.priorite}">${r.priorite}</span></td><td>${r.composantConcerne}</td><td>${r.description}</td></tr>`;
+                });
+            }
+        }
+
+        async function loadAuditsData() {
+            try {
+                const res = await fetch('/api/audits/');
+                const data = await res.json();
+
+                const reportAuditSelect = document.getElementById('report-audit-select');
+                reportAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+                const vulnAuditSelect = document.getElementById('vuln-audit-select');
+                vulnAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+                const reconSelect = document.getElementById('recon-audit-select');
+                reconSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+
+                data.audits.forEach(a => {
+                    reportAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur}</option>`;
+                    vulnAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur}</option>`;
+                    reconSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur} [${a.statut_display}]</option>`;
+                });
+
+                const tbody = document.getElementById('audits-table-body');
+                tbody.innerHTML = '';
+                data.audits.forEach(a => {
+                    let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
+
+                    if (a.statut === 'EN_COURS') {
+                        actionsHtml += `
+                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="pauseAudit('${a.id}')">Pause</button>
+                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="terminerAudit('${a.id}')">Terminer</button>
+                            <button class="btn btn-danger" style="padding: 4px 10px;" onclick="arreterAudit('${a.id}')">Arrêter</button>
+                        `;
+                    }
+                    actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px;" onclick="viewAuditPlan('${a.id}')">Voir Plan</button>`;
+
+                    const planifBadge = a.typePlanification === 'REPETITIVE'
+                        ? `<span class="badge badge-EN_COURS">Répétitive (${a.frequence_display})</span>`
+                        : `<span class="badge badge-FAIBLE">Unique</span>`;
+
+                    const heureBadge = a.heureExecution ? `<br><small style="color:var(--accent); font-weight:600;">Heure: ${a.heureExecution}</small>` : '';
+                    const webhookBadge = a.webhookN8nUrl ? `<br><span class="badge badge-INVITE" title="${a.webhookN8nUrl}">⚡ n8n Webhook</span>` : '';
+                    const lastLaunchText = a.dateDernierLancement ? new Date(a.dateDernierLancement).toLocaleString() : 'Jamais lancé';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <strong>${a.titre}</strong>
+                                ${a.contexte ? `<br><small style="color:var(--text-muted);">${a.contexte}</small>` : ''}
+                                <br><small style="color:var(--text-secondary); font-weight:600;">Dernier Lancement: ${lastLaunchText}</small>
+                            </td>
+                            <td>
+                                <strong>${a.type_display}</strong><br>
+                                ${planifBadge}${heureBadge}${webhookBadge}
+                            </td>
+                            <td>
+                                <strong>${a.cible.valeur}</strong><br>
+                                <small style="color:var(--text-muted);">${a.projet.nom}</small>
+                            </td>
+                            <td><span class="badge badge-${a.statut}">${a.statut_display}</span></td>
+                            <td><div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div></td>
+                            <td><strong>${a.scoreSecurite}/100</strong></td>
+                            <td>${actionsHtml}</td>
+                        </tr>
+                    `;
+                });
+
+
+                if (data.audits.length > 0 && !reconSelect.value) {
+                    reconSelect.value = data.audits[0].id;
+                    loadReconForSelectedAudit();
+                }
+
+            } catch (e) { console.error(e); }
+        }
+
+        function togglePlanificationOptions() {
+            const planif = document.getElementById('audit-planif-select').value;
+            const freqGroup = document.getElementById('group-frequence');
+            const freqSelect = document.getElementById('audit-freq-select');
+            const labelHeure = document.getElementById('label-heure');
+
+            if (planif === 'REPETITIVE') {
+                freqGroup.style.display = 'block';
+                if (freqSelect.value === 'AUCUNE') freqSelect.value = 'HEBDOMADAIRE';
+                if (labelHeure) labelHeure.innerText = "Heure d'Exécution Récurrente (ex: 14:30)";
+            } else {
+                freqGroup.style.display = 'none';
+                freqSelect.value = 'AUCUNE';
+                if (labelHeure) labelHeure.innerText = "Heure d'Exécution Programmée (Ponctuelle)";
+            }
+        }
+
+
+        async function handleCreateAudit(e) {
+            e.preventDefault();
+            const titre = document.getElementById('audit-titre').value;
+            const type = document.getElementById('audit-type-select').value;
+            const projet_id = document.getElementById('audit-proj-select').value;
+            const cible_id = document.getElementById('audit-cible-select').value;
+            const typePlanification = document.getElementById('audit-planif-select').value;
+            const frequence = document.getElementById('audit-freq-select').value;
+            const heureExecution = document.getElementById('audit-heure').value;
+            const webhookN8nUrl = document.getElementById('audit-n8n-webhook').value;
+            const contexte = document.getElementById('audit-contexte').value;
+
+            const res = await fetch('/api/audits/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titre, type, projet_id, cible_id, typePlanification, frequence, heureExecution, webhookN8nUrl, contexte })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Audit créé ! Démarrage & Trigger Webhook n8n...');
+                await fetch(`/api/audits/${data.audit.id}/demarrer/`, { method: 'POST' });
+                loadAuditsData();
+                loadExecutiveDashboardStats();
+            }
+        }
+
+
+
+        async function demarrerAudit(id) {
+            const res = await fetch(`/api/audits/${id}/demarrer/`, { method: 'POST' });
+            if (res.ok) { loadAuditsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function pauseAudit(id) {
+            const res = await fetch(`/api/audits/${id}/pause/`, { method: 'POST' });
+            if (res.ok) { loadAuditsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function arreterAudit(id) {
+            const res = await fetch(`/api/audits/${id}/arreter/`, { method: 'POST' });
+            if (res.ok) { loadAuditsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function terminerAudit(id) {
+            const res = await fetch(`/api/audits/${id}/terminer/`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) { showToast(`Audit terminé ! Score : ${data.audit.scoreSecurite}/100`); loadAuditsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function viewAuditPlan(auditId) {
+            const res = await fetch(`/api/audits/${auditId}/`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('audit-plan-details-card').style.display = 'block';
+                document.getElementById('audit-plan-title').innerText = `Plan d'Audit (${data.type_display}) - ${data.cible.valeur}`;
+                document.getElementById('audit-plan-desc').innerText = data.plan ? data.plan.description : 'Aucun plan disponible.';
+
+                const tbody = document.getElementById('audit-etapes-table-body');
+                tbody.innerHTML = '';
+                if (data.plan && data.plan.etapes) {
+                    data.plan.etapes.forEach(e => {
+                        tbody.innerHTML += `<tr><td>#${e.ordre}</td><td><strong>${e.nom}</strong></td><td><span class="badge badge-${e.statut}">${e.statut_display}</span></td><td>${e.statut !== 'COMPLETED' ? `<button class="btn" style="padding: 4px 10px;" onclick="completeEtape('${e.id}', '${auditId}')">Valider l'Étape</button>` : 'OK'}</td></tr>`;
+                    });
+                }
+            }
+        }
+
+        async function completeEtape(etapeId, auditId) {
+            const res = await fetch(`/api/audits/etapes/${etapeId}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statut: 'COMPLETED' })
+            });
+            if (res.ok) { viewAuditPlan(auditId); loadAuditsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function loadProjectsData() {
+            const res = await fetch('/api/projects/');
+            const data = await res.json();
+
+            const projectsTbody = document.getElementById('projects-table-body');
+            const projSelect = document.getElementById('cible-proj-select');
+            const auditProjSelect = document.getElementById('audit-proj-select');
+            const memberProjSelect = document.getElementById('assign-member-project');
+
+            projectsTbody.innerHTML = '';
+            projSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
+            auditProjSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
+            memberProjSelect.innerHTML = '<option value="">-- (Optionnel) Sélectionner un projet --</option>';
+
+            const authCibleSelect = document.getElementById('auth-cible-select');
+            authCibleSelect.innerHTML = '<option value="">-- Choisir une cible --</option>';
+
+            for (const p of data.projects) {
+                projectsTbody.innerHTML += `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`;
+
+                projSelect.innerHTML += `<option value="${p.id}">${p.nom} (${p.organisation})</option>`;
+                auditProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
+                memberProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
+
+                const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
+                if (ciblesRes.ok) {
+                    const ciblesData = await ciblesRes.json();
+                    ciblesData.cibles.forEach(c => {
+                        authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
+                    });
+                }
+            }
+        }
+
+        async function updateCiblesForAudit() {
+            const projId = document.getElementById('audit-proj-select').value;
+            const cibleSelect = document.getElementById('audit-cible-select');
+            cibleSelect.innerHTML = '<option value="">-- Chargement... --</option>';
+            if (!projId) return;
+
+            const res = await fetch(`/api/projects/${projId}/cibles/`);
+            if (res.ok) {
+                const data = await res.json();
+                cibleSelect.innerHTML = '';
+                data.cibles.forEach(c => {
+                    cibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} [${c.type}] - ${c.statut_display}</option>`;
+                });
+            }
+        }
+
+        async function handleCreateProject(e) {
+            e.preventDefault();
+            const nom = document.getElementById('new-proj-nom').value;
+            const organisation = document.getElementById('new-proj-org').value;
+            const description = document.getElementById('new-proj-desc').value;
+
+            const res = await fetch('/api/projects/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom, organisation, description })
+            });
+
+            if (res.ok) { showToast('Projet créé avec succès !'); loadProjectsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function archiveProject(projectId) {
+            const res = await fetch(`/api/projects/${projectId}/archive/`, { method: 'POST' });
+            if (res.ok) { showToast('Projet archivé !'); loadProjectsData(); loadExecutiveDashboardStats(); }
+        }
+
+        async function handleCreateCible(e) {
+            e.preventDefault();
+            const projectId = document.getElementById('cible-proj-select').value;
+            const valeur = document.getElementById('cible-valeur').value;
+            const type = document.getElementById('cible-type').value;
+            const environnement = document.getElementById('cible-env').value;
+
+            const res = await fetch(`/api/projects/${projectId}/cibles/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valeur, type, environnement })
+            });
+
+            if (res.ok) { showToast('Cible ajoutée !'); loadProjectsData(); }
+        }
+
+        async function handleCreateAutorisation(e) {
+            e.preventDefault();
+            const cibleId = document.getElementById('auth-cible-select').value;
+            const dateDebut = document.getElementById('auth-date-debut').value;
+            const dateFin = document.getElementById('auth-date-fin').value;
+            const preuve = document.getElementById('auth-preuve').value;
+            const testsActifsAutorises = document.getElementById('auth-tests-actifs').checked;
+
+            const res = await fetch(`/api/projects/cibles/${cibleId}/autorisations/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dateDebut, dateFin, preuve, testsActifsAutorises })
+            });
+
+            if (res.ok) { showToast('Autorisation enregistrée !'); loadProjectsData(); }
+        }
+
+        async function loadUsersData() {
+            const res = await fetch('/api/users/list/');
+            const data = await res.json();
+
+            const usersTbody = document.getElementById('users-table-body');
+            const memberSelect = document.getElementById('assign-member-user');
+            const notifUserSelect = document.getElementById('notif-user-select');
+            const logUserSelect = document.getElementById('log-user-select');
+
+            usersTbody.innerHTML = '';
+            memberSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+            notifUserSelect.innerHTML = '<option value="">-- Sélectionner un destinataire --</option>';
+            logUserSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+
+            data.users.forEach(user => {
+                usersTbody.innerHTML += `<tr><td><strong>${user.nom}</strong></td><td>${user.email}</td><td><span class="badge badge-${user.statut}">${user.statut_display}</span></td><td>${user.derniereConnexion ? new Date(user.derniereConnexion).toLocaleString() : 'Jamais'}</td><td>${user.roles.join(', ') || 'Aucun'}</td><td><select class="status-select" onchange="changeUserStatus('${user.id}', this.value)"><option value="ACTIF" ${user.statut === 'ACTIF' ? 'selected' : ''}>ACTIF</option><option value="INVITE" ${user.statut === 'INVITE' ? 'selected' : ''}>INVITE</option><option value="SUSPENDU" ${user.statut === 'SUSPENDU' ? 'selected' : ''}>SUSPENDU</option><option value="BLOQUE" ${user.statut === 'BLOQUE' ? 'selected' : ''}>BLOQUE</option><option value="DESACTIVE" ${user.statut === 'DESACTIVE' ? 'selected' : ''}>DESACTIVE</option></select></td></tr>`;
+                memberSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                notifUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                logUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+            });
+        }
+
+        async function changeUserStatus(userId, newStatus) {
+            const res = await fetch(`/api/users/${userId}/status/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statut: newStatus })
+            });
+            if (res.ok) { showToast('Statut utilisateur mis à jour'); loadUsersData(); }
+        }
+
+        async function loadRoles() {
+            const res = await fetch('/api/users/roles/');
+            const data = await res.json();
+            const tbody = document.getElementById('roles-table-body');
+            tbody.innerHTML = '';
+            data.roles.forEach(role => {
+                tbody.innerHTML += `<tr><td><strong>${role.nom}</strong></td><td>${role.description || '-'}</td><td>${role.permissions.map(p => `<span class="badge badge-INVITE">${p}</span>`).join(' ') || 'Aucune'}</td></tr>`;
+            });
+        }
+
+        async function loadMembers() {
+            const res = await fetch('/api/users/members/');
+            const data = await res.json();
+
+            const tbody = document.getElementById('members-table-body');
+            tbody.innerHTML = '';
+            data.members.forEach(member => {
+                tbody.innerHTML += `<tr><td><strong>${member.nom}</strong></td><td>${member.email}</td><td>${new Date(member.dateAffectation).toLocaleString()}</td><td><span class="badge ${member.actif ? 'badge-ACTIF' : 'badge-DESACTIVE'}">${member.actif ? 'Actif' : 'Inactif'}</span></td></tr>`;
+            });
+        }
+
+        async function handleCreateRole(e) {
+            e.preventDefault();
+            const nom = document.getElementById('new-role-nom').value;
+            const description = document.getElementById('new-role-desc').value;
+
+            const res = await fetch('/api/users/roles/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom, description })
+            });
+            if (res.ok) { showToast('Rôle créé avec succès'); loadRoles(); }
+        }
+
+        async function handleAssignMember(e) {
+            e.preventDefault();
+            const utilisateur_id = document.getElementById('assign-member-user').value;
+            const projet_id = document.getElementById('assign-member-project').value;
+
+            const res = await fetch('/api/users/members/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ utilisateur_id, projet_id, actif: true })
+            });
+            if (res.ok) { showToast('Membre affecté'); loadMembers(); }
+        }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            const nom = document.getElementById('profile-nom').value;
+            const email = document.getElementById('profile-email').value;
+            const password = document.getElementById('profile-password').value;
+
+            const res = await fetch('/api/users/profile/', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom, email, password })
+            });
+            if (res.ok) { showToast('Profil mis à jour'); loadProfile(); }
+        }
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            loadProfile();
+            loadExecutiveDashboardStats();
+            loadLogsData();
+            loadNotificationsData();
+            loadReportsData();
+            loadVulnsData();
+            loadAuditsData();
+            loadProjectsData();
+            loadUsersData();
+            loadRoles();
+            loadMembers();
+            togglePlanificationOptions();
+        });
+
+    </script>
+</body>
+</html>
