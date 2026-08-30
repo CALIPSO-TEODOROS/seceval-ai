@@ -319,3 +319,81 @@ def audit_etape_update_view(request, etape_id):
         return json_response({'error': 'Étape introuvable.'}, status=404)
     except Exception as e:
         return json_response({'error': str(e)}, status=400)
+
+
+@csrf_exempt
+def audit_callback_n8n_view(request, audit_id):
+    """
+    POST/GET: Webhook Callback appelé par n8n lorsque le traitement de l'agent IA est terminé.
+    Met à jour le statut, le score, la progression et crée le rapport d'audit dans SecEval AI.
+    """
+    if request.method not in ['POST', 'GET']:
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    try:
+        audit = Audit.objects.get(id=audit_id)
+
+        data = {}
+        if request.method == 'GET':
+            data = request.GET.dict()
+        else:
+            if request.body:
+                try:
+                    data = json.loads(request.body.decode('utf-8'))
+                except Exception:
+                    data = request.POST.dict()
+            if not data:
+                data = request.POST.dict()
+
+
+        rapport_text = data.get('rapport') or data.get('output') or data.get('result') or data.get('text') or ''
+        score = float(data.get('scoreSecurite', 85.0))
+        progression = int(data.get('progression', 100))
+
+        audit.statut = StatutAudit.TERMINE
+        audit.scoreSecurite = min(100.0, max(0.0, score))
+        audit.progression = min(100, max(0, progression))
+        audit.dateFin = timezone.now()
+        audit.save()
+
+        # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
+        if rapport_text:
+            from reports.models import Rapport, FormatRapport, StatutRapport
+            Rapport.objects.create(
+                titre=f"Rapport Automatise n8n - {audit.titre or audit.cible.valeur}",
+                audit=audit,
+                format=FormatRapport.HTML,
+                statut=StatutRapport.PUBLIE,
+                cheminFichier=rapport_text[:255],
+                scoreFinal=audit.scoreSecurite
+            )
+
+
+        # Enregistrer l'activité dans le journal
+        from logs_app.models import JournalActivite
+        if audit.lancePar:
+            JournalActivite.enregistrer(
+                utilisateur=audit.lancePar,
+                action="TRAITEMENT_N8N_TERMINE",
+                ressource=audit.cible.valeur,
+                details=f"n8n AI Agent a finalisé l'audit '{audit.titre}' sur {audit.cible.valeur}.",
+                projet=audit.projet,
+                audit=audit
+            )
+
+
+        return json_response({
+            'message': 'Résultat du traitement n8n enregistré avec succès dans SecEval AI.',
+            'audit': {
+                'id': str(audit.id),
+                'statut': audit.statut,
+                'scoreSecurite': audit.scoreSecurite,
+                'progression': audit.progression,
+                'dateFin': audit.dateFin.isoformat()
+            }
+        })
+    except Audit.DoesNotExist:
+        return json_response({'error': 'Audit introuvable.'}, status=404)
+    except Exception as e:
+        return json_response({'error': str(e)}, status=400)
+

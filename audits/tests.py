@@ -176,6 +176,23 @@ class AuditAPITests(TestCase):
         self.audit.refresh_from_db()
         self.assertEqual(self.audit.statut, StatutAudit.TERMINE)
 
+    def test_audit_callback_n8n_api(self):
+        callback_url = reverse('audits:callback', kwargs={'audit_id': self.audit.id})
+        res = self.client.post(
+            callback_url,
+            data=json.dumps({
+                'rapport': 'Rapport d\'analyse généré automatiquement par l\'agent IA n8n.',
+                'scoreSecurite': 95.0,
+                'progression': 100
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+        self.audit.refresh_from_db()
+        self.assertEqual(self.audit.statut, StatutAudit.TERMINE)
+        self.assertEqual(self.audit.scoreSecurite, 95.0)
+
+
     def test_seed_audits_command(self):
         call_command('seed_audits')
         self.assertTrue(Audit.objects.filter(type=TypeAudit.STANDARD).exists())

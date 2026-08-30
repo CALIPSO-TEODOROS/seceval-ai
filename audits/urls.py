@@ -6,7 +6,8 @@ from .views import (
     audit_pause_view,
     audit_arreter_view,
     audit_terminer_view,
-    audit_etape_update_view
+    audit_etape_update_view,
+    audit_callback_n8n_view
 )
 
 app_name = 'audits'
@@ -18,5 +19,7 @@ urlpatterns = [
     path('<uuid:audit_id>/pause/', audit_pause_view, name='pause'),
     path('<uuid:audit_id>/arreter/', audit_arreter_view, name='arreter'),
     path('<uuid:audit_id>/terminer/', audit_terminer_view, name='terminer'),
+    path('<uuid:audit_id>/callback/', audit_callback_n8n_view, name='callback'),
     path('etapes/<uuid:etape_id>/', audit_etape_update_view, name='update-etape'),
 ]
+
