@@ -228,9 +228,10 @@
         </div>
     </div>
 
+    {{ report_text|json_script:"report-data" }}
     <script>
-        const rawReportText = {{ report_text|json_script:"report-data" }};
         const textContent = JSON.parse(document.getElementById('report-data').textContent);
+
 
         function parseMarkdownToHtml(md) {
             if (!md) return "<p><em>Aucun contenu de rapport disponible.</em></p>";
