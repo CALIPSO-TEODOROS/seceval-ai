@@ -168,7 +168,9 @@ def api_root(request):
 urlpatterns = [
     path('', api_root, name='api-root'),
     path('web/', web_ui_view, name='web-ui-direct'),
+    path('web/dashboard/', web_ui_view, name='web-dashboard-alias'),
     path('web/login/', login_page_view, name='login-page-direct'),
+
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/projects/', include('projects.urls')),
