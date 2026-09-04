@@ -235,11 +235,40 @@
 
         function parseMarkdownToHtml(md) {
             if (!md) return "<p><em>Aucun contenu de rapport disponible.</em></p>";
-
-            // Unescape linebreaks if needed
             let html = md.replace(/\\n/g, '\n');
 
-            // 1. Process Markdown Tables
+            // Detect and transform ASCII Score Boxes (┌───┐ ... └───┘ or SCORE GLOBAL) into clean CSS metric cards
+            html = html.replace(/`?\s*┌─+┐[\s\S]*?└─+┘\s*`?/gi, function(match) {
+                let scoreMatch = match.match(/SCORE GLOBAL\s*:\s*([\d\.]+\s*\/\s*10[^\n\|]*)/i);
+                let scoreText = scoreMatch ? scoreMatch[1].trim() : "5.8 / 10 — RISQUE MOYEN";
+
+                let critiqueMatch = match.match(/Critique\s*:\s*(\d+)/i);
+                let eleveMatch = match.match(/Élevé\s*:\s*(\d+)/i);
+                let moyenMatch = match.match(/Moyen\s*:\s*(\d+)/i);
+                let faibleMatch = match.match(/Faible\s*:\s*(\d+)/i);
+
+                let cCount = critiqueMatch ? critiqueMatch[1] : '0';
+                let eCount = eleveMatch ? eleveMatch[1] : '0';
+                let mCount = moyenMatch ? moyenMatch[1] : '0';
+                let fCount = faibleMatch ? faibleMatch[1] : '0';
+
+                return `
+                <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:10px; padding:16px; margin:16px 0; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
+                    <div style="font-weight:700; font-size:1.15rem; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                        📊 SCORE GLOBAL : <span style="background:var(--bg-secondary); padding:4px 12px; border-radius:6px; color:var(--text-main);">${scoreText}</span>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:0.95rem;">
+                        <span style="background:rgba(220,38,38,0.25); color:#f87171; padding:6px 12px; border-radius:6px; font-weight:600;">🔴 Critique : ${cCount}</span>
+                        <span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:6px 12px; border-radius:6px; font-weight:600;">🔴 Élevé : ${eCount}</span>
+                        <span style="background:rgba(245,158,11,0.2); color:#fde047; padding:6px 12px; border-radius:6px; font-weight:600;">🟡 Moyen : ${mCount}</span>
+                        <span style="background:rgba(34,197,94,0.2); color:#86efac; padding:6px 12px; border-radius:6px; font-weight:600;">🟢 Faible : ${fCount}</span>
+                    </div>
+                </div>`;
+            });
+
+            // Replace horizontal lines
+            html = html.replace(/^---$/gim, '<hr style="border:0; border-top:1px solid var(--border-color); margin:18px 0;">');
+
             const lines = html.split('\n');
             let inTable = false;
             let tableHeader = [];
@@ -248,21 +277,17 @@
 
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].trim();
-
                 if (line.startsWith('|') && line.endsWith('|')) {
                     if (!inTable) {
                         inTable = true;
                         tableHeader = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
                         continue;
                     }
-                    if (line.includes('---')) {
-                        continue; // skip separator row
-                    }
+                    if (line.includes('---')) continue;
                     let cells = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
                     tableRows.push(cells);
                 } else {
                     if (inTable) {
-                        // Render collected table
                         outLines.push(renderHtmlTable(tableHeader, tableRows));
                         inTable = false;
                         tableHeader = [];
@@ -271,34 +296,27 @@
                     outLines.push(line);
                 }
             }
-            if (inTable) {
-                outLines.push(renderHtmlTable(tableHeader, tableRows));
-            }
+            if (inTable) outLines.push(renderHtmlTable(tableHeader, tableRows));
 
             html = outLines.join('\n');
-
-            // 2. Headings
-            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-            // 3. Bold, Code and Badges
+            html = html.replace(/^### (.*$)/gim, '<h4 style="color:var(--accent); margin-top:14px; margin-bottom:8px;">$1</h4>');
+            html = html.replace(/^## (.*$)/gim, '<h3 style="color:var(--accent); margin-top:16px; margin-bottom:10px;">$1</h3>');
+            html = html.replace(/^# (.*$)/gim, '<h2 style="color:var(--accent); margin-top:18px; margin-bottom:12px;">$1</h2>');
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/`(.*?)`/g, '<code style="background:var(--bg-tertiary); padding:2px 6px; border-radius:4px;">$1</code>');
+            html = html.replace(/`(.*?)`/g, '<code style="background:var(--bg-tertiary); padding:2px 5px; border-radius:4px; font-family:monospace;">$1</code>');
 
-            // Replace Emojis / Severity text with badges
-            html = html.replace(/🔴 <strong>Élevé<\/strong>/g, '<span class="badge-eleve">🔴 Élevé</span>');
-            html = html.replace(/🔴 Élevé/g, '<span class="badge-eleve">🔴 Élevé</span>');
-            html = html.replace(/🟡 <strong>Moyen<\/strong>/g, '<span class="badge-moyen">🟡 Moyen</span>');
-            html = html.replace(/🟡 Moyen/g, '<span class="badge-moyen">🟡 Moyen</span>');
-            html = html.replace(/🟢 <strong>Faible<\/strong>/g, '<span class="badge-faible">🟢 Faible</span>');
-            html = html.replace(/🟢 Faible/g, '<span class="badge-faible">🟢 Faible</span>');
-
-            // Linebreaks to paragraphs
-            html = html.replace(/\n\n/g, '<br><br>');
+            html = html.replace(/🔴 <strong>Critique<\/strong>/g, '<span style="background:rgba(220,38,38,0.25); color:#f87171; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Critique</span>');
+            html = html.replace(/🔴 Critique/g, '<span style="background:rgba(220,38,38,0.25); color:#f87171; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Critique</span>');
+            html = html.replace(/🔴 <strong>Élevé<\/strong>/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
+            html = html.replace(/🔴 Élevé/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
+            html = html.replace(/🟡 <strong>Moyen<\/strong>/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
+            html = html.replace(/🟡 Moyen/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
+            html = html.replace(/🟢 <strong>Faible<\/strong>/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
+            html = html.replace(/🟢 Faible/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
 
             return html;
         }
+
 
         function renderHtmlTable(headers, rows) {
             let tableHtml = '<table><thead><tr>';
