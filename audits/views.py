@@ -43,12 +43,14 @@ def audits_list_create_view(request):
                 'prochaineExecution': a.prochaineExecution.isoformat() if a.prochaineExecution else None,
                 'dateDernierLancement': a.dateDernierLancement.isoformat() if a.dateDernierLancement else None,
                 'webhookN8nUrl': a.webhookN8nUrl,
+                'resultatBrutN8n': a.resultatBrutN8n or {},
                 'scoreSecurite': a.scoreSecurite,
                 'progression': a.progression,
                 'dateCreation': a.dateCreation.isoformat(),
                 'dateDebut': a.dateDebut.isoformat() if a.dateDebut else None,
                 'dateFin': a.dateFin.isoformat() if a.dateFin else None
             })
+
 
         return json_response({'audits': audits_data, 'total': len(audits_data)})
 
@@ -177,7 +179,9 @@ def audit_detail_view(request, audit_id):
             'prochaineExecution': audit.prochaineExecution.isoformat() if audit.prochaineExecution else None,
             'dateDernierLancement': audit.dateDernierLancement.isoformat() if audit.dateDernierLancement else None,
             'webhookN8nUrl': audit.webhookN8nUrl,
+            'resultatBrutN8n': audit.resultatBrutN8n or {},
             'scoreSecurite': audit.scoreSecurite,
+
 
 
             'progression': audit.progression,
@@ -354,7 +358,9 @@ def audit_callback_n8n_view(request, audit_id):
         audit.scoreSecurite = min(100.0, max(0.0, score))
         audit.progression = min(100, max(0, progression))
         audit.dateFin = timezone.now()
+        audit.resultatBrutN8n = data
         audit.save()
+
 
         # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
         if rapport_text:

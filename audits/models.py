@@ -129,8 +129,10 @@ class Audit(models.Model):
     dateFin = models.DateTimeField(null=True, blank=True, verbose_name="Date de fin")
     scoreSecurite = models.FloatField(default=0.0, verbose_name="Score de sécurité (0 à 100)")
     progression = models.IntegerField(default=0, verbose_name="Progression (0 à 100%)")
+    resultatBrutN8n = models.JSONField(default=dict, blank=True, null=True, verbose_name="Résultats bruts reçus de n8n")
 
     class Meta:
+
         verbose_name = "Audit de Sécurité"
         verbose_name_plural = "Audits de Sécurité"
         ordering = ['-dateCreation']
