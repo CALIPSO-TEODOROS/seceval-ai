@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport d'Audit - {{ audit.titre }} | SecEval AI</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #0f172a;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .kpi-card small {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .kpi-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 6px;
+            color: var(--accent);
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 28px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Rendered Markdown Styling */
+        .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+            color: var(--accent);
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .markdown-content p {
+            margin-bottom: 1em;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .markdown-content th, .markdown-content td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .markdown-content th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .markdown-content tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .badge-eleve { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+        .badge-moyen { background-color: rgba(245, 158, 11, 0.2); color: #fde047; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+        .badge-faible { background-color: rgba(34, 197, 94, 0.2); color: #86efac; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+
+        pre.raw-json {
+            background-color: var(--bg-primary);
+            color: #38bdf8;
+            padding: 18px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "Fira Code", monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        @media print {
+            body { background-color: #fff; color: #000; padding: 0; }
+            .header-bar, .btn { display: none !important; }
+            .kpi-card, .card { background-color: #fff; border: 1px solid #ccc; color: #000; box-shadow: none; }
+            .markdown-content table { background-color: #fff; border: 1px solid #ccc; }
+            .markdown-content th { background-color: #f1f5f9; color: #000; }
+            .markdown-content th, .markdown-content td { border-bottom: 1px solid #ccc; }
+            .kpi-card .value { color: #0284c7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <div>
+                <h2 style="margin:0;">🛡️ Rapport Détaillé d'Audit de Sécurité</h2>
+                <small style="color:var(--text-muted);">SecEval AI • Synthèse d'Évaluation n8n</small>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="window.print()" class="btn">🖨️ Imprimer / Exporter PDF</button>
+                <a href="/web/dashboard/" class="btn btn-outline">⬅️ Dashboard</a>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <small>Audit & Target</small>
+                <div class="value" style="font-size:1.2rem; color:var(--text-main);">{{ audit.titre }}</div>
+                <small style="color:var(--accent);">{{ audit.cible.valeur }}</small>
+            </div>
+            <div class="kpi-card">
+                <small>Score de Sécurité</small>
+                <div class="value" style="color: {% if audit.scoreSecurite >= 80 %}var(--success){% elif audit.scoreSecurite >= 50 %}var(--warning){% else %}var(--danger){% endif %};">
+                    {{ audit.scoreSecurite }}/100
+                </div>
+            </div>
+            <div class="kpi-card">
+                <small>Statut Execution</small>
+                <div class="value" style="font-size:1.2rem; color:var(--success);">{{ audit.get_statut_display }}</div>
+            </div>
+            <div class="kpi-card">
+                <small>Projet Concerné</small>
+                <div class="value" style="font-size:1.2rem; color:var(--text-main);">{{ audit.projet.nom }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">📋 Rapport & Analyse de l'Agent IA</h3>
+            <div id="formatted-report-container" class="markdown-content">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <div class="card">
+            <details>
+                <summary style="cursor:pointer; font-weight:600; color:var(--accent);">🔍 Voir les Données Brutes JSON reçues de n8n</summary>
+                <pre class="raw-json" style="margin-top:15px;">{{ raw_data_json }}</pre>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        const rawReportText = {{ report_text|json_script:"report-data" }};
+        const textContent = JSON.parse(document.getElementById('report-data').textContent);
+
+        function parseMarkdownToHtml(md) {
+            if (!md) return "<p><em>Aucun contenu de rapport disponible.</em></p>";
+
+            // Unescape linebreaks if needed
+            let html = md.replace(/\\n/g, '\n');
+
+            // 1. Process Markdown Tables
+            const lines = html.split('\n');
+            let inTable = false;
+            let tableHeader = [];
+            let tableRows = [];
+            let outLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHeader = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
+                        continue;
+                    }
+                    if (line.includes('---')) {
+                        continue; // skip separator row
+                    }
+                    let cells = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
+                    tableRows.push(cells);
+                } else {
+                    if (inTable) {
+                        // Render collected table
+                        outLines.push(renderHtmlTable(tableHeader, tableRows));
+                        inTable = false;
+                        tableHeader = [];
+                        tableRows = [];
+                    }
+                    outLines.push(line);
+                }
+            }
+            if (inTable) {
+                outLines.push(renderHtmlTable(tableHeader, tableRows));
+            }
+
+            html = outLines.join('\n');
+
+            // 2. Headings
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // 3. Bold, Code and Badges
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/`(.*?)`/g, '<code style="background:var(--bg-tertiary); padding:2px 6px; border-radius:4px;">$1</code>');
+
+            // Replace Emojis / Severity text with badges
+            html = html.replace(/🔴 <strong>Élevé<\/strong>/g, '<span class="badge-eleve">🔴 Élevé</span>');
+            html = html.replace(/🔴 Élevé/g, '<span class="badge-eleve">🔴 Élevé</span>');
+            html = html.replace(/🟡 <strong>Moyen<\/strong>/g, '<span class="badge-moyen">🟡 Moyen</span>');
+            html = html.replace(/🟡 Moyen/g, '<span class="badge-moyen">🟡 Moyen</span>');
+            html = html.replace(/🟢 <strong>Faible<\/strong>/g, '<span class="badge-faible">🟢 Faible</span>');
+            html = html.replace(/🟢 Faible/g, '<span class="badge-faible">🟢 Faible</span>');
+
+            // Linebreaks to paragraphs
+            html = html.replace(/\n\n/g, '<br><br>');
+
+            return html;
+        }
+
+        function renderHtmlTable(headers, rows) {
+            let tableHtml = '<table><thead><tr>';
+            headers.forEach(h => { tableHtml += `<th>${h}</th>`; });
+            tableHtml += '</tr></thead><tbody>';
+
+            rows.forEach(r => {
+                tableHtml += '<tr>';
+                r.forEach(c => {
+                    let formatted = c.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    if (formatted.includes('Élevé')) formatted = `<span class="badge-eleve">${formatted}</span>`;
+                    else if (formatted.includes('Moyen')) formatted = `<span class="badge-moyen">${formatted}</span>`;
+                    else if (formatted.includes('Faible')) formatted = `<span class="badge-faible">${formatted}</span>`;
+                    tableHtml += `<td>${formatted}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
+        document.getElementById('formatted-report-container').innerHTML = parseMarkdownToHtml(textContent);
+    </script>
+</body>
+</html>
