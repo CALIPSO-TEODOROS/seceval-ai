@@ -1680,6 +1680,8 @@
                 data.audits.forEach(a => {
                     let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
                     actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">📊 Résultats N8N</button>`;
+                    actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">📜 Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
+
 
                     if (a.statut === 'EN_COURS') {
                         actionsHtml += `
@@ -2167,6 +2169,68 @@
         }
 
 
+        async function viewAuditHistory(auditId) {
+            try {
+                const res = await fetch(`/api/audits/${auditId}/historique/`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const container = document.getElementById('audit-history-modal-body');
+
+                let rowsHtml = '';
+                if (data.executions.length === 0) {
+                    rowsHtml = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Aucune exécution récurrente enregistrée pour le moment. Lancer un audit pour créer un historique.</td></tr>`;
+                } else {
+                    data.executions.forEach(ex => {
+                        rowsHtml += `
+                            <tr style="border-bottom:1px solid var(--border-color);">
+                                <td style="padding:10px;"><strong>Lancement #${ex.num_run}</strong></td>
+                                <td style="padding:10px;">${ex.dateExecution_display}</td>
+                                <td style="padding:10px;"><span class="badge badge-${ex.statut}">${ex.statut_display}</span></td>
+                                <td style="padding:10px;"><strong>${ex.scoreSecurite}/100</strong></td>
+                                <td style="padding:10px;">
+                                    <a class="btn" style="padding:4px 10px; font-size:0.85rem; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/executions/${ex.id}/rapport-page/" target="_blank">📊 Rapport Run #${ex.num_run}</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                container.innerHTML = `
+                    <div style="margin-bottom:15px; background:var(--bg-tertiary); padding:12px 16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="font-size:1.1rem; color:var(--accent);">${data.titre}</strong><br>
+                            <small style="color:var(--text-muted);">Planification: ${data.typePlanification === 'REPETITIVE' ? 'Répétitive (' + data.frequence_display + ')' : 'Ponctuelle'}</small>
+                        </div>
+                        <div>
+                            <span class="badge badge-EN_COURS" style="font-size:1rem;">${data.total} Exécution(s) enregistrée(s)</span>
+                        </div>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse; margin-top:10px; background:var(--bg-secondary); border-radius:8px; overflow:hidden;">
+                        <thead>
+                            <tr style="background:var(--bg-tertiary); text-align:left;">
+                                <th style="padding:12px;">N° Run</th>
+                                <th style="padding:12px;">Date & Heure de Lancement</th>
+                                <th style="padding:12px;">Statut</th>
+                                <th style="padding:12px;">Score</th>
+                                <th style="padding:12px;">Rapport Dédié</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                `;
+
+                document.getElementById('modal-audit-history').style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function closeAuditHistoryModal() {
+            document.getElementById('modal-audit-history').style.display = 'none';
+        }
+
         // Initialize Application
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -2200,6 +2264,20 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL HISTORIQUE EXECUTIONS RECURRENTES -->
+    <div id="modal-audit-history" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9999; justify-content:center; align-items:center;">
+        <div class="card" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:15px;">
+                <h3 style="margin:0;">📜 Historique des Exécutions Récurrentes</h3>
+                <button class="btn btn-outline" style="padding:4px 10px; cursor:pointer;" onclick="closeAuditHistoryModal()">✕ Fermer</button>
+            </div>
+            <div id="audit-history-modal-body">
+                <!-- Content dynamically injected by JS -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
 

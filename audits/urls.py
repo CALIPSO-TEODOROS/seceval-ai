@@ -8,7 +8,9 @@ from .views import (
     audit_terminer_view,
     audit_etape_update_view,
     audit_callback_n8n_view,
-    audit_rapport_page_view
+    audit_rapport_page_view,
+    audit_historique_view,
+    execution_rapport_page_view
 )
 
 app_name = 'audits'
@@ -22,7 +24,10 @@ urlpatterns = [
     path('<uuid:audit_id>/terminer/', audit_terminer_view, name='terminer'),
     path('<uuid:audit_id>/callback/', audit_callback_n8n_view, name='callback'),
     path('<uuid:audit_id>/rapport-page/', audit_rapport_page_view, name='rapport-page'),
+    path('<uuid:audit_id>/historique/', audit_historique_view, name='historique'),
+    path('executions/<uuid:execution_id>/rapport-page/', execution_rapport_page_view, name='execution-rapport-page'),
     path('etapes/<uuid:etape_id>/', audit_etape_update_view, name='update-etape'),
 ]
+
 
 

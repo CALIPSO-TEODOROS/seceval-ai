@@ -6,6 +6,7 @@ from .models import (
     Audit,
     PlanAudit,
     EtapeAudit,
+    ExecutionAudit,
     TypeAudit,
     StatutAudit,
     StatutExecution
@@ -361,6 +362,17 @@ def audit_callback_n8n_view(request, audit_id):
         audit.resultatBrutN8n = data
         audit.save()
 
+        # Met à jour la dernière exécution ou en crée une nouvelle
+        latest_exec = audit.executions.filter(statut=StatutAudit.EN_COURS).order_by('-dateExecution').first()
+        if not latest_exec:
+            latest_exec = ExecutionAudit.objects.create(audit=audit, statut=StatutAudit.EN_COURS)
+        
+        latest_exec.statut = StatutAudit.TERMINE
+        latest_exec.scoreSecurite = audit.scoreSecurite
+        latest_exec.resultatBrutN8n = data
+        latest_exec.rapportText = rapport_text
+        latest_exec.dateFin = timezone.now()
+        latest_exec.save()
 
         # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
         if rapport_text:
@@ -404,6 +416,59 @@ def audit_callback_n8n_view(request, audit_id):
         return json_response({'error': str(e)}, status=400)
 
 
+def audit_historique_view(request, audit_id):
+    """
+    GET: Renvoie l'historique chronologique de toutes les exécutions passées d'un audit récurrent/répétitif.
+    """
+    try:
+        audit = Audit.objects.get(id=audit_id)
+        executions = audit.executions.all().order_by('-dateExecution')
+        data = []
+        for idx, ex in enumerate(executions, start=1):
+            data.append({
+                'id': str(ex.id),
+                'num_run': len(executions) - idx + 1,
+                'dateExecution': ex.dateExecution.isoformat(),
+                'dateExecution_display': ex.dateExecution.strftime('%d/%m/%Y %H:%M:%S'),
+                'dateFin': ex.dateFin.strftime('%d/%m/%Y %H:%M:%S') if ex.dateFin else 'En cours',
+                'statut': ex.statut,
+                'statut_display': ex.get_statut_display(),
+                'scoreSecurite': ex.scoreSecurite,
+                'has_rapport': bool(ex.rapportText or ex.resultatBrutN8n),
+                'resultatBrutN8n': ex.resultatBrutN8n or {}
+            })
+        return json_response({
+            'audit_id': str(audit.id),
+            'titre': audit.titre,
+            'typePlanification': audit.typePlanification,
+            'frequence_display': audit.get_frequence_display(),
+            'executions': data,
+            'total': len(data)
+        })
+    except Audit.DoesNotExist:
+        return json_response({'error': 'Audit introuvable.'}, status=404)
+
+
+def execution_rapport_page_view(request, execution_id):
+    """
+    GET: Vue HTML dédiée pleine page du rapport pour une exécution d'audit récurrente spécifique.
+    """
+    from django.shortcuts import render
+    try:
+        execution = ExecutionAudit.objects.select_related('audit', 'audit__projet', 'audit__cible').get(id=execution_id)
+        raw_data = execution.resultatBrutN8n or {}
+        report_text = execution.rapportText or raw_data.get('rapport') or raw_data.get('output') or raw_data.get('result') or raw_data.get('text') or ''
+        
+        return render(request, 'audits/rapport_detail.html', {
+            'audit': execution.audit,
+            'execution': execution,
+            'raw_data_json': json.dumps(raw_data, indent=2, ensure_ascii=False),
+            'report_text': report_text
+        })
+    except ExecutionAudit.DoesNotExist:
+        return json_response({'error': 'Exécution d\'audit introuvable.'}, status=404)
+
+
 def audit_rapport_page_view(request, audit_id):
     """
     GET: Vue HTML dédiée pleine page du rapport d'audit pour lecture et impression PDF.
@@ -421,5 +486,3 @@ def audit_rapport_page_view(request, audit_id):
         })
     except Audit.DoesNotExist:
         return json_response({'error': 'Audit introuvable.'}, status=404)
-
-

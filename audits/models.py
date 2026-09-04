@@ -210,7 +210,14 @@ class Audit(models.Model):
             self.dateDebut = now
         self.save(update_fields=['statut', 'dateDebut', 'dateDernierLancement'])
 
+        # Enregistrer une nouvelle exécution d'audit dans l'historique
+        ExecutionAudit.objects.create(
+            audit=self,
+            statut=StatutAudit.EN_COURS
+        )
+
         # Déclenchement du Webhook n8n
+
         if self.webhookN8nUrl:
             self.declencherWebhookN8n()
 
@@ -373,3 +380,33 @@ class EtapeAudit(models.Model):
 
     def __str__(self):
         return f"Étape {self.ordre}: {self.nom} [{self.get_statut_display()}]"
+
+
+class ExecutionAudit(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    audit = models.ForeignKey(
+        Audit,
+        on_delete=models.CASCADE,
+        related_name="executions",
+        verbose_name="Audit parent"
+    )
+    dateExecution = models.DateTimeField(auto_now_add=True, verbose_name="Date & Heure d'exécution")
+    dateFin = models.DateTimeField(null=True, blank=True, verbose_name="Date & Heure de fin")
+    statut = models.CharField(
+        max_length=20,
+        choices=StatutAudit.choices,
+        default=StatutAudit.EN_COURS,
+        verbose_name="Statut de l'exécution"
+    )
+    scoreSecurite = models.FloatField(default=0.0, verbose_name="Score de sécurité (0 à 100)")
+    resultatBrutN8n = models.JSONField(default=dict, blank=True, null=True, verbose_name="Résultats bruts n8n")
+    rapportText = models.TextField(blank=True, default="", verbose_name="Rapport d'analyse texte")
+
+    class Meta:
+        verbose_name = "Exécution d'Audit"
+        verbose_name_plural = "Exécutions d'Audit"
+        ordering = ['-dateExecution']
+
+    def __str__(self):
+        return f"Exécution {self.audit.titre} - {self.dateExecution.strftime('%Y-%m-%d %H:%M:%S')} [{self.get_statut_display()}]"
+
