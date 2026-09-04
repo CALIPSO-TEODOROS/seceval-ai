@@ -403,3 +403,23 @@ def audit_callback_n8n_view(request, audit_id):
     except Exception as e:
         return json_response({'error': str(e)}, status=400)
 
+
+def audit_rapport_page_view(request, audit_id):
+    """
+    GET: Vue HTML dédiée pleine page du rapport d'audit pour lecture et impression PDF.
+    """
+    from django.shortcuts import render
+    try:
+        audit = Audit.objects.select_related('projet', 'cible', 'lancePar').get(id=audit_id)
+        raw_data = audit.resultatBrutN8n or {}
+        report_text = raw_data.get('rapport') or raw_data.get('output') or raw_data.get('result') or raw_data.get('text') or audit.contexte or ''
+        
+        return render(request, 'audits/rapport_detail.html', {
+            'audit': audit,
+            'raw_data_json': json.dumps(raw_data, indent=2, ensure_ascii=False),
+            'report_text': report_text
+        })
+    except Audit.DoesNotExist:
+        return json_response({'error': 'Audit introuvable.'}, status=404)
+
+

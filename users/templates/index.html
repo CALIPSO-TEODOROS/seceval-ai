@@ -2021,6 +2021,74 @@
             if (res.ok) { showToast('Profil mis à jour'); loadProfile(); }
         }
 
+        function parseMarkdownToHtml(md) {
+            if (!md) return "<p><em>Aucun contenu de rapport disponible.</em></p>";
+            let html = md.replace(/\\n/g, '\n');
+
+            const lines = html.split('\n');
+            let inTable = false;
+            let tableHeader = [];
+            let tableRows = [];
+            let outLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHeader = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
+                        continue;
+                    }
+                    if (line.includes('---')) continue;
+                    let cells = line.split('|').map(s => s.trim()).filter((s, idx, arr) => idx > 0 && idx < arr.length - 1);
+                    tableRows.push(cells);
+                } else {
+                    if (inTable) {
+                        outLines.push(renderHtmlTable(tableHeader, tableRows));
+                        inTable = false;
+                        tableHeader = [];
+                        tableRows = [];
+                    }
+                    outLines.push(line);
+                }
+            }
+            if (inTable) outLines.push(renderHtmlTable(tableHeader, tableRows));
+
+            html = outLines.join('\n');
+            html = html.replace(/^### (.*$)/gim, '<h4 style="color:var(--accent); margin-top:10px;">$1</h4>');
+            html = html.replace(/^## (.*$)/gim, '<h3 style="color:var(--accent); margin-top:12px;">$1</h3>');
+            html = html.replace(/^# (.*$)/gim, '<h2 style="color:var(--accent); margin-top:14px;">$1</h2>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/`(.*?)`/g, '<code style="background:var(--bg-tertiary); padding:2px 5px; border-radius:4px;">$1</code>');
+
+            html = html.replace(/🔴 <strong>Élevé<\/strong>/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
+            html = html.replace(/🔴 Élevé/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
+            html = html.replace(/🟡 <strong>Moyen<\/strong>/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
+            html = html.replace(/🟡 Moyen/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
+            html = html.replace(/🟢 <strong>Faible<\/strong>/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
+            html = html.replace(/🟢 Faible/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
+
+            return html;
+        }
+
+        function renderHtmlTable(headers, rows) {
+            let tableHtml = '<table style="width:100%; border-collapse:collapse; margin:12px 0; font-size:0.9rem; border:1px solid var(--border-color); border-radius:6px; overflow:hidden;"><thead><tr style="background:var(--bg-tertiary);">';
+            headers.forEach(h => { tableHtml += `<th style="padding:8px 12px; border:1px solid var(--border-color); text-align:left;">${h}</th>`; });
+            tableHtml += '</tr></thead><tbody>';
+
+            rows.forEach(r => {
+                tableHtml += '<tr>';
+                r.forEach(c => {
+                    let formatted = c.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    tableHtml += `<td style="padding:8px 12px; border:1px solid var(--border-color);">${formatted}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            return tableHtml;
+        }
+
         async function viewN8nResults(auditId) {
             try {
                 const res = await fetch(`/api/audits/${auditId}/`);
@@ -2032,8 +2100,12 @@
                 const hasRaw = Object.keys(rawData).length > 0;
                 const jsonPretty = hasRaw ? JSON.stringify(rawData, null, 2) : 'Aucun résultat brut enregistré de n8n pour le moment.';
                 const reportText = rawData.rapport || rawData.output || rawData.result || rawData.text || audit.contexte || 'Aucun résumé texte envoyé par n8n.';
+                const formattedHtml = parseMarkdownToHtml(reportText);
 
                 container.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <a class="btn" style="padding:6px 14px; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/${audit.id}/rapport-page/" target="_blank">🔗 Ouvrir la Page Complète du Rapport (Plein Écran)</a>
+                    </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:15px; background:var(--bg-tertiary); padding:12px; border-radius:8px;">
                         <div><small style="color:var(--text-muted);">Titre Audit</small><br><strong>${audit.titre}</strong></div>
                         <div><small style="color:var(--text-muted);">Score Sécurité</small><br><span class="badge badge-COMPLETED" style="font-size:1.1rem;">${audit.scoreSecurite}/100</span></div>
@@ -2041,11 +2113,11 @@
                     </div>
                     <div style="margin-bottom:15px;">
                         <h4 style="margin-bottom:8px;">📝 Rapport & Synthèse d'Analyse IA n8n :</h4>
-                        <div style="background:var(--bg-secondary); border-left:4px solid var(--accent); padding:12px; border-radius:4px; font-size:0.95rem; white-space:pre-wrap; max-height:200px; overflow-y:auto;">${reportText}</div>
+                        <div style="background:var(--bg-secondary); border-left:4px solid var(--accent); padding:16px; border-radius:8px; font-size:0.95rem; max-height:350px; overflow-y:auto;">${formattedHtml}</div>
                     </div>
                     <div>
                         <h4 style="margin-bottom:8px;">🔍 Payload JSON Brut Reçu de n8n (Tous les champs) :</h4>
-                        <pre style="background:var(--bg-tertiary); color:var(--text-main); padding:15px; border-radius:8px; overflow-x:auto; font-family:monospace; font-size:0.85rem; max-height:300px;">${jsonPretty}</pre>
+                        <pre style="background:var(--bg-tertiary); color:var(--text-main); padding:15px; border-radius:8px; overflow-x:auto; font-family:monospace; font-size:0.85rem; max-height:250px;">${jsonPretty}</pre>
                     </div>
                 `;
 
@@ -2058,6 +2130,7 @@
         function closeN8nResultsModal() {
             document.getElementById('modal-n8n-results').style.display = 'none';
         }
+
 
         // Initialize Application
         document.addEventListener('DOMContentLoaded', () => {
