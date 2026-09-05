@@ -339,11 +339,180 @@
             animation: fadeIn 0.3s ease; font-weight: 600;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+        /* Responsive Table Wrapper */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* Mobile Menu Toggle Button */
+        .menu-toggle-btn {
+            display: none;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 700;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            transition: all 0.2s ease;
+        }
+        .menu-toggle-btn:hover { border-color: var(--accent); }
+
+        /* Sidebar Mobile Backdrop */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1040;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* MEDIA QUERIES FOR TABLETS & SMARTPHONES */
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0; left: 0;
+                height: 100vh;
+                z-index: 1050;
+                transform: translateX(-100%);
+                box-shadow: var(--shadow-lg);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow-y: auto;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .menu-toggle-btn {
+                display: inline-flex;
+            }
+
+            .header {
+                padding: 0 16px;
+                height: 64px;
+            }
+
+            .content-body {
+                padding: 16px;
+            }
+
+            .chart-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-title h2 {
+                font-size: 1.1rem;
+            }
+
+            .header-controls {
+                gap: 8px;
+            }
+
+            .theme-toggle-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .theme-toggle-btn #theme-text {
+                display: none;
+            }
+
+            .user-badge {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+                max-width: 130px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.82rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .card {
+                padding: 18px;
+                margin-bottom: 18px;
+                border-radius: 12px;
+            }
+
+            .stat-value {
+                font-size: 1.7rem;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            th, td {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+
+            .toast-container {
+                left: 16px; right: 16px; bottom: 16px;
+            }
+
+            .toast {
+                text-align: center;
+                padding: 12px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                padding: 0 12px;
+            }
+        }
+
     </style>
 </head>
 <body>
 
     <!-- Sidebar Navigation Datafy Style -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleMobileSidebar(false)"></div>
     <div class="sidebar">
         <div class="logo">
             <img src="/media/seceval_logo.png" alt="SecEval AI Logo" class="sidebar-logo-img">
@@ -367,9 +536,12 @@
     <!-- Main Section -->
     <div class="main-content">
         <!-- Top Header Datafy Style -->
-        <div class="header">
-            <div class="header-title">
-                <h2 id="page-title">Vue d'ensemble</h2>
+                <div class="header">
+            <div style="display: flex; align-items: center;">
+                <button class="menu-toggle-btn" onclick="toggleMobileSidebar(true)" aria-label="Menu">📱 ☰</button>
+                <div class="header-title">
+                    <h2 id="page-title">Vue d'ensemble</h2>
+                </div>
             </div>
             <div class="header-controls">
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
@@ -473,7 +645,8 @@
                             <h3 class="card-title">Dernières Alertes & Notifications Prioritaires</h3>
                             <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('notifs')">Voir Tout</button>
                         </div>
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th>Canal</th>
@@ -484,6 +657,7 @@
                             </thead>
                             <tbody id="dash-recent-notifs"></tbody>
                         </table>
+</div>
                     </div>
 
                     <div class="card">
@@ -491,7 +665,8 @@
                             <h3 class="card-title">Dernières Vulnérabilités Identifiées</h3>
                             <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('vulns')">PoC / Patch</button>
                         </div>
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th>Gravité</th>
@@ -502,6 +677,7 @@
                             </thead>
                             <tbody id="dash-recent-vulns"></tbody>
                         </table>
+</div>
                     </div>
                 </div>
 
@@ -511,7 +687,8 @@
                         <h3 class="card-title">Campagnes d'Audits Récents</h3>
                         <button class="btn btn-outline" onclick="switchTab('audits')">Gérer les Audits</button>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Type d'Audit</th>
@@ -524,6 +701,7 @@
                         </thead>
                         <tbody id="dashboard-recent-audits"></tbody>
                     </table>
+</div>
                 </div>
 
                 <!-- Recent Activity Logs Feed -->
@@ -532,7 +710,8 @@
                         <h3 class="card-title">Journal d'Activité Récent (Audit Trail)</h3>
                         <button class="btn btn-outline" style="padding: 4px 10px;" onclick="switchTab('logs')">Consulter Logs</button>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Date & Heure</th>
@@ -544,6 +723,7 @@
                         </thead>
                         <tbody id="dash-recent-logs"></tbody>
                     </table>
+</div>
                 </div>
 
             </div>
@@ -563,7 +743,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Journaux d'Activité & Audit Logs</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Date & Heure</th>
@@ -576,6 +757,7 @@
                         </thead>
                         <tbody id="logs-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -599,7 +781,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Historique des Notifications & Alertes</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Canal</th>
@@ -612,6 +795,7 @@
                         </thead>
                         <tbody id="notifs-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -635,7 +819,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Rapports d'Évaluation de Sécurité (Classés par Audit & Date)</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Titre de l'Audit</th>
@@ -648,6 +833,7 @@
                         </thead>
                         <tbody id="reports-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -706,7 +892,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Vulnérabilités Identifiées dans les Audits</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Gravité</th>
@@ -719,6 +906,7 @@
                         </thead>
                         <tbody id="vulns-table-body"></tbody>
                     </table>
+</div>
                 </div>
 
                 <div class="card" id="vuln-inspect-card" style="display:none;">
@@ -739,10 +927,12 @@
                                 </thead>
                                 <tbody id="vuln-preuves-tbody"></tbody>
                             </table>
+</div>
                         </div>
                         <div>
                             <h4>Recommandations de Patch (`Recommandation`)</h4>
-                            <table>
+                            <div class="table-responsive">
+<table>
                                 <thead>
                                     <tr>
                                         <th>Priorité</th>
@@ -752,6 +942,7 @@
                                 </thead>
                                 <tbody id="vuln-recs-tbody"></tbody>
                             </table>
+</div>
                         </div>
                     </div>
                 </div>
@@ -779,7 +970,8 @@
                         <div class="card-header">
                             <h3 class="card-title">Technologies Détectées (`TechnologieDetectee`)</h3>
                         </div>
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th>Technologie</th>
@@ -790,13 +982,15 @@
                             </thead>
                             <tbody id="recon-tech-tbody"></tbody>
                         </table>
+</div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">Services & Ports Ouverts (`ServiceDetecte`)</h3>
                         </div>
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th>Port</th>
@@ -807,6 +1001,7 @@
                             </thead>
                             <tbody id="recon-services-tbody"></tbody>
                         </table>
+</div>
                     </div>
                 </div>
 
@@ -814,7 +1009,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Certificats SSL / TLS (`CertificatSSL`)</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Sujet (CN)</th>
@@ -827,6 +1023,7 @@
                         </thead>
                         <tbody id="recon-ssl-tbody"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -919,7 +1116,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Campagnes d'Audits en Cours & Exécutées</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Titre & Contexte</th>
@@ -933,6 +1131,7 @@
                         </thead>
                         <tbody id="audits-table-body"></tbody>
                     </table>
+</div>
                 </div>
 
 
@@ -941,7 +1140,8 @@
                         <h3 class="card-title" id="audit-plan-title">Plan d'Audit Détaillé (`PlanAudit`)</h3>
                     </div>
                     <p id="audit-plan-desc" style="color: var(--text-muted);"></p>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Ordre</th>
@@ -952,6 +1152,7 @@
                         </thead>
                         <tbody id="audit-etapes-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -984,7 +1185,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Liste des Projets d'Évaluation</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Nom</th>
@@ -996,6 +1198,7 @@
                         </thead>
                         <tbody id="projects-table-body"></tbody>
                     </table>
+</div>
                 </div>
 
                 <div class="form-row">
@@ -1076,7 +1279,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Liste des Utilisateurs</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Nom</th>
@@ -1089,6 +1293,7 @@
                         </thead>
                         <tbody id="users-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -1115,7 +1320,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Rôles Définis</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Rôle</th>
@@ -1125,6 +1331,7 @@
                         </thead>
                         <tbody id="roles-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -1153,7 +1360,8 @@
                     <div class="card-header">
                         <h3 class="card-title">Membres Affectés (`MembreProjet`)</h3>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Nom</th>
@@ -1164,6 +1372,7 @@
                         </thead>
                         <tbody id="members-table-body"></tbody>
                     </table>
+</div>
                 </div>
             </div>
 
@@ -1223,7 +1432,22 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
+        
+        function toggleMobileSidebar(show) {
+            const sidebar = document.querySelector('.sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar || !backdrop) return;
+            if (show) {
+                sidebar.classList.add('mobile-open');
+                backdrop.classList.add('active');
+            } else {
+                sidebar.classList.remove('mobile-open');
+                backdrop.classList.remove('active');
+            }
+        }
+
         function switchTab(tabId) {
+            toggleMobileSidebar(false);
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -2080,7 +2304,8 @@
                 tableHtml += '</tr>';
             });
 
-            tableHtml += '</tbody></table>';
+            tableHtml += '</tbody></table>
+</div>';
             return tableHtml;
         }
 
@@ -2177,6 +2402,7 @@
                             ${rowsHtml}
                         </tbody>
                     </table>
+</div>
                 `;
 
                 document.getElementById('modal-audit-history').style.display = 'flex';
