@@ -44,56 +44,48 @@ def vulns_list_create_view(request):
         return json_response({'vulnerabilites': vulns_data, 'total': len(vulns_data)})
 
     elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            audit_id = data.get('audit_id')
-            titre = data.get('titre')
-            description = data.get('description', '')
-            gravite = data.get('gravite', Gravite.MOYENNE)
-            scoreCVSS = data.get('scoreCVSS', 5.0)
-            codeCWE = data.get('codeCWE', '')
-            confiance = data.get('confiance', 100.0)
-
-            if not audit_id or not titre:
-                return json_response({'error': 'Les champs audit_id et titre sont obligatoires.'}, status=400)
-
-            audit = Audit.objects.get(id=audit_id)
-
-            vuln = Vulnerabilite.objects.create(
-                audit=audit,
-                titre=titre,
-                description=description,
-                gravite=gravite,
-                scoreCVSS=scoreCVSS,
-                codeCWE=codeCWE,
-                confiance=confiance,
-                statut=StatutVulnerabilite.NOUVELLE
-            )
-
-            JournalActivite.enregistrer_depuis_requete(
-                request,
-                action="DETECTION_VULNERABILITE",
-                ressource=vuln.titre,
-                details=f"Déclaration de la vulnérabilité [{vuln.gravite}] '{vuln.titre}' (Score CVSS: {vuln.scoreCVSS}).",
-                projet=audit.projet,
-                audit=audit
-            )
-
-            return json_response({
-                'message': 'Vulnérabilité enregistrée avec succès.',
-                'vulnerabilite': {
-                    'id': str(vuln.id),
-                    'titre': vuln.titre,
-                    'gravite': vuln.gravite,
-                    'scoreCVSS': vuln.scoreCVSS
-                }
-            }, status=201)
-        except Audit.DoesNotExist:
-            return json_response({'error': 'Audit introuvable.'}, status=404)
-        except Exception as e:
-            return json_response({'error': str(e)}, status=400)
+        return json_response({
+            'error': "La création manuelle de vulnérabilités est désactivée. Les vulnérabilités sont automatiquement extraites et rapportées depuis les audits de sécurité."
+        }, status=403)
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+
+@csrf_exempt
+def vulns_synchroniser_view(request):
+    """
+    POST /api/vulns/synchroniser/
+    Lit l'ensemble des audits de sécurité et de leurs rapports pour analyser, extraire
+    et mettre à jour les vulnérabilités identifiées dans la base de données.
+    """
+    if request.method != 'POST':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    try:
+        from .services import extraire_et_synchroniser_vulnerabilites_audit
+        total_created = 0
+        total_updated = 0
+        audits = Audit.objects.all()
+
+        for audit in audits:
+            created, updated = extraire_et_synchroniser_vulnerabilites_audit(audit)
+            total_created += created
+            total_updated += updated
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="SYNCHRONISATION_VULNERABILITES",
+            ressource="Base de Vulnérabilités",
+            details=f"Synchronisation automatique des vulnérabilités depuis {audits.count()} audit(s). Extrait: {total_created} nouvelle(s), {total_updated} mise(s) à jour."
+        )
+
+        return json_response({
+            'message': f'Synchronisation effectuée avec succès depuis {audits.count()} audit(s).',
+            'vulnerabilites_creees': total_created,
+            'vulnerabilites_mises_a_jour': total_updated
+        })
+    except Exception as e:
+        return json_response({'error': str(e)}, status=400)
 
 
 @csrf_exempt

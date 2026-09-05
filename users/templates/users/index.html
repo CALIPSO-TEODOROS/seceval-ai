@@ -839,53 +839,20 @@
 
             <!-- TAB: VULNERABILITES & POC -->
             <div id="tab-vulns" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Signaler / Détecter une Vulnérabilité (`Vulnerabilite`)</h3>
+                <div class="card" style="background: var(--input-bg); border-left: 4px solid var(--accent); margin-bottom: 24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                        <div>
+                            <h3 style="margin:0 0 6px 0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                                🛡️ Vulnérabilités Identifiées dans les Audits (Extraction Automatique)
+                            </h3>
+                            <p style="margin:0; font-size:0.88rem; color:var(--text-muted);">
+                                La déclaration manuelle est désactivée. Les vulnérabilités sont automatiquement analysées, extraites et mises à jour depuis les audits de sécurité et les rapports d'évaluation n8n.
+                            </p>
+                        </div>
+                        <button class="btn" style="white-space:nowrap;" onclick="syncVulnsFromAudits()">
+                            🔄 Analyser & Synchroniser depuis les Audits
+                        </button>
                     </div>
-                    <form onsubmit="handleCreateVuln(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Sélectionner l'Audit</label>
-                                <select id="vuln-audit-select" class="form-control" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Titre de la Vulnérabilité</label>
-                                <input type="text" id="vuln-titre" class="form-control" placeholder="ex: Injection SQL sur /api/login" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Gravité / Sévérité</label>
-                                <select id="vuln-gravite" class="form-control">
-                                    <option value="CRITIQUE">Critique (CVSS 9.0 - 10.0)</option>
-                                    <option value="ELEVEE">Élevée (CVSS 7.0 - 8.9)</option>
-                                    <option value="MOYENNE" selected>Moyenne (CVSS 4.0 - 6.9)</option>
-                                    <option value="FAIBLE">Faible (CVSS 0.1 - 3.9)</option>
-                                    <option value="INFORMATION">Information (CVSS 0.0)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Score CVSS (0.0 à 10.0)</label>
-                                <input type="number" step="0.1" id="vuln-cvss" class="form-control" value="7.5" min="0" max="10">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Code CWE (ex: CWE-89, CWE-79)</label>
-                                <input type="text" id="vuln-cwe" class="form-control" placeholder="CWE-89">
-                            </div>
-                            <div class="form-group">
-                                <label>Niveau de Confiance (%)</label>
-                                <input type="number" id="vuln-confiance" class="form-control" value="100" min="0" max="100">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Description Détaillée</label>
-                            <input type="text" id="vuln-desc" class="form-control" placeholder="Description de l'impact technique et du contexte">
-                        </div>
-                        <button type="submit" class="btn">Enregistrer la Vulnérabilité</button>
-                    </form>
                 </div>
 
                 <div class="card">
@@ -1795,26 +1762,21 @@
             } catch (e) { console.error(e); }
         }
 
-        async function handleCreateVuln(e) {
-            e.preventDefault();
-            const audit_id = document.getElementById('vuln-audit-select').value;
-            const titre = document.getElementById('vuln-titre').value;
-            const gravite = document.getElementById('vuln-gravite').value;
-            const scoreCVSS = parseFloat(document.getElementById('vuln-cvss').value);
-            const codeCWE = document.getElementById('vuln-cwe').value;
-            const confiance = parseFloat(document.getElementById('vuln-confiance').value);
-            const description = document.getElementById('vuln-desc').value;
-
-            const res = await fetch('/api/vulns/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ audit_id, titre, gravite, scoreCVSS, codeCWE, confiance, description })
-            });
-
-            if (res.ok) {
-                showToast('Vulnérabilité signalée avec succès !');
-                loadVulnsData();
-                loadExecutiveDashboardStats();
+        async function syncVulnsFromAudits() {
+            try {
+                showToast('Analyse et extraction des vulnérabilités depuis les audits...');
+                const res = await fetch('/api/vulns/synchroniser/', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'Synchronisation effectuée avec succès !');
+                    loadVulnsData();
+                    loadExecutiveDashboardStats();
+                } else {
+                    showToast(data.error || 'Erreur lors de la synchronisation.', 'danger');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Impossible de contacter le serveur.', 'danger');
             }
         }
 

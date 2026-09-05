@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     vulns_list_create_view,
+    vulns_synchroniser_view,
     vuln_detail_view,
     vuln_confirmer_view,
     vuln_faux_positif_view,
@@ -14,6 +15,7 @@ app_name = 'vulns'
 
 urlpatterns = [
     path('', vulns_list_create_view, name='list-create'),
+    path('synchroniser/', vulns_synchroniser_view, name='synchroniser'),
     path('<uuid:vuln_id>/', vuln_detail_view, name='detail'),
     path('<uuid:vuln_id>/confirmer/', vuln_confirmer_view, name='confirmer'),
     path('<uuid:vuln_id>/faux-positif/', vuln_faux_positif_view, name='faux-positif'),

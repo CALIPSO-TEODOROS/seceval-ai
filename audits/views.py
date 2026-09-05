@@ -313,6 +313,11 @@ def audit_terminer_view(request, audit_id):
     try:
         audit = Audit.objects.get(id=audit_id)
         audit.terminer()
+        try:
+            from vulns.services import extraire_et_synchroniser_vulnerabilites_audit
+            extraire_et_synchroniser_vulnerabilites_audit(audit)
+        except Exception as ve:
+            print(f"[Warning] Vulnerability extraction error: {ve}")
         send_audit_completion_notifications(audit)
         return json_response({
             'message': 'Audit terminé avec succès.',
@@ -551,6 +556,18 @@ hr {{ border-color: #334155; }}
 
         # Envoi automatique de notification par email avec rapport
         send_audit_completion_notifications(audit, new_rapport, filepath)
+
+        # Extraction et synchronisation automatique des vulnérabilités de l'audit
+        try:
+            from vulns.services import extraire_et_synchroniser_vulnerabilites_audit
+            extraire_et_synchroniser_vulnerabilites_audit(audit)
+        except Exception as ve:
+            print(f"[Warning] n8n Vulnerability extraction error: {ve}")
+
+        # Conserver le score de sécurité explicitement fourni par n8n s'il est spécifié
+        if data.get('scoreSecurite') is not None:
+            audit.scoreSecurite = min(100.0, max(0.0, float(data['scoreSecurite'])))
+            audit.save(update_fields=['scoreSecurite'])
 
 
         # Enregistrer l'activité dans le journal

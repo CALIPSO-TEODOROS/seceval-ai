@@ -102,7 +102,7 @@ class VulnAPITests(TestCase):
         data = res.json()
         self.assertGreaterEqual(data['total'], 1)
 
-        # Create vuln
+        # Create vuln manually should return 403 Forbidden
         res_create = self.client.post(
             reverse('vulns:list-create'),
             data=json.dumps({
@@ -115,7 +115,13 @@ class VulnAPITests(TestCase):
             }),
             content_type='application/json'
         )
-        self.assertEqual(res_create.status_code, 201)
+        self.assertEqual(res_create.status_code, 403)
+
+    def test_vulns_synchroniser_api(self):
+        res_sync = self.client.post(reverse('vulns:synchroniser'))
+        self.assertEqual(res_sync.status_code, 200)
+        data = res_sync.json()
+        self.assertIn('message', data)
 
     def test_vuln_lifecycle_api(self):
         # Confirmer
