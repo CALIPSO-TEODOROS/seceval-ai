@@ -23,6 +23,7 @@ urlpatterns = [
     path('<uuid:audit_id>/arreter/', audit_arreter_view, name='arreter'),
     path('<uuid:audit_id>/terminer/', audit_terminer_view, name='terminer'),
     path('<uuid:audit_id>/callback/', audit_callback_n8n_view, name='callback'),
+    path('callback/', audit_callback_n8n_view, name='callback-global'),
     path('<uuid:audit_id>/rapport-page/', audit_rapport_page_view, name='rapport-page'),
     path('<uuid:audit_id>/historique/', audit_historique_view, name='historique'),
     path('executions/<uuid:execution_id>/rapport-page/', execution_rapport_page_view, name='execution-rapport-page'),

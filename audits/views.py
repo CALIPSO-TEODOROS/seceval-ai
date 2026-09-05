@@ -470,7 +470,7 @@ L'équipe SecEval AI
 
 
 @csrf_exempt
-def audit_callback_n8n_view(request, audit_id):
+def audit_callback_n8n_view(request, audit_id=None):
     """
     POST/GET: Webhook Callback appelé par n8n lorsque le traitement de l'agent IA est terminé.
     Met à jour le statut, le score, la progression et crée le rapport d'audit dans SecEval AI.
@@ -478,20 +478,39 @@ def audit_callback_n8n_view(request, audit_id):
     if request.method not in ['POST', 'GET']:
         return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
-    try:
-        audit = Audit.objects.get(id=audit_id)
-
-        data = {}
-        if request.method == 'GET':
-            data = request.GET.dict()
-        else:
-            if request.body:
-                try:
-                    data = json.loads(request.body.decode('utf-8'))
-                except Exception:
-                    data = request.POST.dict()
-            if not data:
+    data = {}
+    if request.method == 'GET':
+        data = request.GET.dict()
+    else:
+        if request.body:
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+            except Exception:
                 data = request.POST.dict()
+        if not data:
+            data = request.POST.dict()
+
+    target_audit_id = audit_id or data.get('audit_id') or data.get('id') or data.get('audit')
+
+    audit = None
+    if target_audit_id:
+        try:
+            audit = Audit.objects.get(id=target_audit_id)
+        except (Audit.DoesNotExist, ValueError):
+            pass
+
+    if not audit:
+        # Fallback 1: Le plus récent audit en cours
+        audit = Audit.objects.filter(statut=StatutAudit.EN_COURS).order_by('-dateCreation').first()
+
+    if not audit:
+        # Fallback 2: Le plus récent audit créé
+        audit = Audit.objects.order_by('-dateCreation').first()
+
+    if not audit:
+        return json_response({'error': 'Aucun audit disponible pour enregistrer les résultats.'}, status=404)
+
+    try:
 
 
         rapport_text = data.get('rapport') or data.get('output') or data.get('result') or data.get('text') or ''
