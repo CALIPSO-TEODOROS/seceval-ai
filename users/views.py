@@ -420,7 +420,7 @@ def dashboard_stats_view(request):
             'codeCWE': v.codeCWE,
             'statut': v.statut,
             'statut_display': v.get_statut_display(),
-            'cible': v.audit.cible.valeur
+            'cible': v.audit.cible.valeur if (v.audit and v.audit.cible) else 'N/A'
         }
         for v in vulns_qs.select_related('audit', 'audit__cible')[:5]
     ]
@@ -431,7 +431,7 @@ def dashboard_stats_view(request):
             'canal': n.canal,
             'sujet': n.sujet,
             'statut': n.statut,
-            'destinataire': n.destinataire.nom,
+            'destinataire': n.destinataire.nom if n.destinataire else 'Système / Email',
             'dateEnvoi': n.dateEnvoi.isoformat() if n.dateEnvoi else None
         }
         for n in Notification.objects.select_related('destinataire')[:5]
@@ -442,7 +442,7 @@ def dashboard_stats_view(request):
             'id': str(l.id),
             'action': l.action,
             'ressource': l.ressource,
-            'utilisateur': l.utilisateur.nom,
+            'utilisateur': l.utilisateur.nom if l.utilisateur else 'Système',
             'adresseIP': l.adresseIP,
             'dateAction': l.dateAction.isoformat()
         }

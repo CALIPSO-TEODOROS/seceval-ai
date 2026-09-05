@@ -1863,16 +1863,17 @@
                 const data = await res.json();
 
                 const reportAuditSelect = document.getElementById('report-audit-select');
-                reportAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+                if (reportAuditSelect) reportAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
                 const vulnAuditSelect = document.getElementById('vuln-audit-select');
-                vulnAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+                if (vulnAuditSelect) vulnAuditSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
                 const reconSelect = document.getElementById('recon-audit-select');
-                reconSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
+                if (reconSelect) reconSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
 
                 data.audits.forEach(a => {
-                    reportAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur}</option>`;
-                    vulnAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur}</option>`;
-                    reconSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${a.cible.valeur} [${a.statut_display}]</option>`;
+                    const cibleVal = (a.cible && a.cible.valeur) ? a.cible.valeur : '';
+                    if (reportAuditSelect) reportAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal}</option>`;
+                    if (vulnAuditSelect) vulnAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal}</option>`;
+                    if (reconSelect) reconSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal} [${a.statut_display}]</option>`;
                 });
 
                 const tbody = document.getElementById('audits-table-body');
@@ -2030,37 +2031,38 @@
         }
 
         async function loadProjectsData() {
-            const res = await fetch('/api/projects/');
-            const data = await res.json();
+            try {
+                const res = await fetch('/api/projects/');
+                const data = await res.json();
 
-            const projectsTbody = document.getElementById('projects-table-body');
-            const projSelect = document.getElementById('cible-proj-select');
-            const auditProjSelect = document.getElementById('audit-proj-select');
-            const memberProjSelect = document.getElementById('assign-member-project');
+                const projectsTbody = document.getElementById('projects-table-body');
+                const projSelect = document.getElementById('cible-proj-select');
+                const auditProjSelect = document.getElementById('audit-proj-select');
+                const memberProjSelect = document.getElementById('assign-member-project');
+                const authCibleSelect = document.getElementById('auth-cible-select');
 
-            projectsTbody.innerHTML = '';
-            projSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
-            auditProjSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
-            memberProjSelect.innerHTML = '<option value="">-- (Optionnel) Sélectionner un projet --</option>';
+                if (projectsTbody) projectsTbody.innerHTML = '';
+                if (projSelect) projSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
+                if (auditProjSelect) auditProjSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
+                if (memberProjSelect) memberProjSelect.innerHTML = '<option value="">-- (Optionnel) Sélectionner un projet --</option>';
+                if (authCibleSelect) authCibleSelect.innerHTML = '<option value="">-- Choisir une cible --</option>';
 
-            const authCibleSelect = document.getElementById('auth-cible-select');
-            authCibleSelect.innerHTML = '<option value="">-- Choisir une cible --</option>';
+                for (const p of data.projects) {
+                    if (projectsTbody) projectsTbody.innerHTML += `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`;
 
-            for (const p of data.projects) {
-                projectsTbody.innerHTML += `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`;
+                    if (projSelect) projSelect.innerHTML += `<option value="${p.id}">${p.nom} (${p.organisation})</option>`;
+                    if (auditProjSelect) auditProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
+                    if (memberProjSelect) memberProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
 
-                projSelect.innerHTML += `<option value="${p.id}">${p.nom} (${p.organisation})</option>`;
-                auditProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
-                memberProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
-
-                const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
-                if (ciblesRes.ok) {
-                    const ciblesData = await ciblesRes.json();
-                    ciblesData.cibles.forEach(c => {
-                        authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
-                    });
+                    const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
+                    if (ciblesRes.ok) {
+                        const ciblesData = await ciblesRes.json();
+                        ciblesData.cibles.forEach(c => {
+                            if (authCibleSelect) authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
+                        });
+                    }
                 }
-            }
+            } catch(e) { console.error(e); }
         }
 
         async function updateCiblesForAudit() {
@@ -2133,25 +2135,27 @@
         }
 
         async function loadUsersData() {
-            const res = await fetch('/api/users/list/');
-            const data = await res.json();
+            try {
+                const res = await fetch('/api/users/list/');
+                const data = await res.json();
 
-            const usersTbody = document.getElementById('users-table-body');
-            const memberSelect = document.getElementById('assign-member-user');
-            const notifUserSelect = document.getElementById('notif-user-select');
-            const logUserSelect = document.getElementById('log-user-select');
+                const usersTbody = document.getElementById('users-table-body');
+                const memberSelect = document.getElementById('assign-member-user');
+                const notifUserSelect = document.getElementById('notif-user-select');
+                const logUserSelect = document.getElementById('log-user-select');
 
-            usersTbody.innerHTML = '';
-            memberSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
-            notifUserSelect.innerHTML = '<option value="">-- Sélectionner un destinataire --</option>';
-            logUserSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+                if (usersTbody) usersTbody.innerHTML = '';
+                if (memberSelect) memberSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
+                if (notifUserSelect) notifUserSelect.innerHTML = '<option value="">-- Sélectionner un destinataire --</option>';
+                if (logUserSelect) logUserSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
 
-            data.users.forEach(user => {
-                usersTbody.innerHTML += `<tr><td><strong>${user.nom}</strong></td><td>${user.email}</td><td><span class="badge badge-${user.statut}">${user.statut_display}</span></td><td>${user.derniereConnexion ? new Date(user.derniereConnexion).toLocaleString() : 'Jamais'}</td><td>${user.roles.join(', ') || 'Aucun'}</td><td><select class="status-select" onchange="changeUserStatus('${user.id}', this.value)"><option value="ACTIF" ${user.statut === 'ACTIF' ? 'selected' : ''}>ACTIF</option><option value="INVITE" ${user.statut === 'INVITE' ? 'selected' : ''}>INVITE</option><option value="SUSPENDU" ${user.statut === 'SUSPENDU' ? 'selected' : ''}>SUSPENDU</option><option value="BLOQUE" ${user.statut === 'BLOQUE' ? 'selected' : ''}>BLOQUE</option><option value="DESACTIVE" ${user.statut === 'DESACTIVE' ? 'selected' : ''}>DESACTIVE</option></select></td></tr>`;
-                memberSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
-                notifUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
-                logUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
-            });
+                data.users.forEach(user => {
+                    if (usersTbody) usersTbody.innerHTML += `<tr><td><strong>${user.nom}</strong></td><td>${user.email}</td><td><span class="badge badge-${user.statut}">${user.statut_display}</span></td><td>${user.derniereConnexion ? new Date(user.derniereConnexion).toLocaleString() : 'Jamais'}</td><td>${user.roles.join(', ') || 'Aucun'}</td><td><select class="status-select" onchange="changeUserStatus('${user.id}', this.value)"><option value="ACTIF" ${user.statut === 'ACTIF' ? 'selected' : ''}>ACTIF</option><option value="INVITE" ${user.statut === 'INVITE' ? 'selected' : ''}>INVITE</option><option value="SUSPENDU" ${user.statut === 'SUSPENDU' ? 'selected' : ''}>SUSPENDU</option><option value="BLOQUE" ${user.statut === 'BLOQUE' ? 'selected' : ''}>BLOQUE</option><option value="DESACTIVE" ${user.statut === 'DESACTIVE' ? 'selected' : ''}>DESACTIVE</option></select></td></tr>`;
+                    if (memberSelect) memberSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                    if (notifUserSelect) notifUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                    if (logUserSelect) logUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                });
+            } catch(e) { console.error(e); }
         }
 
         async function changeUserStatus(userId, newStatus) {
