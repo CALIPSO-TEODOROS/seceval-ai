@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from .models import TechnologieDetectee, ServiceDetecte, CertificatSSL
 from audits.models import Audit
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -175,6 +176,15 @@ def create_technologie_view(request):
             niveauConfiance=niveauConfiance
         )
 
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="AJOUT_TECHNOLOGIE_RECON",
+            ressource=tech.nom,
+            details=f"Détection/ajout de la technologie '{tech.nom}' ({tech.version}) sur {audit.cible.valeur}.",
+            projet=audit.projet,
+            audit=audit
+        )
+
         return json_response({
             'message': 'Technologie enregistrée avec succès.',
             'technologie': {
@@ -214,6 +224,15 @@ def create_service_view(request):
             service=service_name,
             version=version,
             etat=etat
+        )
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="AJOUT_SERVICE_RECON",
+            ressource=f"Port {srv.port}/{srv.protocole}",
+            details=f"Service '{srv.service}' ({srv.etat}) identifié sur {audit.cible.valeur}.",
+            projet=audit.projet,
+            audit=audit
         )
 
         return json_response({
@@ -263,6 +282,15 @@ def create_ssl_view(request):
             dateExpiration=dateExpiration,
             valide=valide,
             protocole=protocole
+        )
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="ANALYSE_CERTIFICAT_SSL",
+            ressource=cert.sujet,
+            details=f"Inspection du certificat SSL/TLS émis par '{cert.emetteur}' pour {audit.cible.valeur}.",
+            projet=audit.projet,
+            audit=audit
         )
 
         return json_response({

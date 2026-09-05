@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login, logout
 from .models import Utilisateur, Role, Permission, StatutUtilisateur, MembreProjet
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -59,6 +60,13 @@ def register_view(request):
             statut=statut
         )
 
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="CREATION_UTILISATEUR",
+            ressource=user.email,
+            details=f"Création de l'utilisateur '{user.nom}' ({user.email})."
+        )
+
         return json_response({
             'message': 'Utilisateur créé avec succès.',
             'user': {
@@ -95,6 +103,12 @@ def login_view(request):
         success, message = user.seConnecter(password)
         if success:
             login(request, user)
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CONNEXION_UTILISATEUR",
+                ressource=user.email,
+                details=f"Connexion réussie de '{user.nom}'."
+            )
             return json_response({
                 'message': message,
                 'user': {
@@ -118,9 +132,17 @@ def logout_view(request):
         return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
     if request.user.is_authenticated:
+        user_email = request.user.email
         if hasattr(request.user, 'seDeconnecter'):
             request.user.seDeconnecter()
         logout(request)
+        JournalActivite.enregistrer(
+            utilisateur=None,
+            action="DECONNEXION_UTILISATEUR",
+            ressource=user_email,
+            details=f"Déconnexion de l'utilisateur '{user_email}'.",
+            adresseIP=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
         return json_response({'message': 'Déconnexion réussie.'}, status=200)
     else:
         logout(request)

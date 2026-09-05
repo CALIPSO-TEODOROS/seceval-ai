@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Notification, CanalNotification
 from audits.models import Audit
 from users.models import Utilisateur
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -62,6 +63,14 @@ def notifications_list_create_view(request):
             # Auto-envoyer
             notif.envoyer()
 
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="ENVOI_NOTIFICATION",
+                ressource=destinataire.email,
+                details=f"Notification [{notif.canal}] '{notif.sujet}' envoyée à {destinataire.email}.",
+                audit=audit
+            )
+
             return json_response({
                 'message': 'Notification créée et envoyée avec succès.',
                 'notification': {
@@ -117,6 +126,13 @@ def notification_envoyer_view(request, notification_id):
     try:
         n = Notification.objects.get(id=notification_id)
         n.envoyer()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="RENVOI_NOTIFICATION",
+            ressource=n.destinataire.email,
+            details=f"Renvoi de la notification [{n.canal}] '{n.sujet}' à {n.destinataire.email}.",
+            audit=n.audit
+        )
         return json_response({
             'message': f'Notification envoyée via {n.get_canal_display()}.',
             'statut': n.statut,

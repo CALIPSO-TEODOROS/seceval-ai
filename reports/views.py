@@ -3,6 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Rapport, FormatRapport, StatutRapport
 from audits.models import Audit
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -61,6 +62,15 @@ def reports_list_create_view(request):
             # Auto-génération du fichier
             rapport.generer()
 
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_RAPPORT",
+                ressource=rapport.titre,
+                details=f"Création et génération du rapport [{rapport.format}] '{rapport.titre}'.",
+                projet=audit.projet,
+                audit=audit
+            )
+
             return json_response({
                 'message': 'Rapport d\'évaluation créé et généré avec succès.',
                 'rapport': {
@@ -115,7 +125,17 @@ def report_detail_view(request, report_id):
         })
 
     elif request.method == 'DELETE':
+        titre = r.titre
+        audit = r.audit
         r.delete()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="SUPPRESSION_RAPPORT",
+            ressource=titre,
+            details=f"Suppression du rapport '{titre}'.",
+            projet=audit.projet,
+            audit=audit
+        )
         return json_response({'message': 'Rapport supprimé avec succès.'})
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
@@ -129,6 +149,14 @@ def report_generer_view(request, report_id):
     try:
         r = Rapport.objects.get(id=report_id)
         r.generer()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="REGENERATION_RAPPORT",
+            ressource=r.titre,
+            details=f"Régénération du rapport '{r.titre}'.",
+            projet=r.audit.projet,
+            audit=r.audit
+        )
         return json_response({
             'message': 'Fichier de rapport régénéré avec succès.',
             'statut': r.statut,
@@ -147,6 +175,14 @@ def report_valider_view(request, report_id):
     try:
         r = Rapport.objects.get(id=report_id)
         r.valider()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="VALIDATION_RAPPORT",
+            ressource=r.titre,
+            details=f"Validation officielle du rapport '{r.titre}'.",
+            projet=r.audit.projet,
+            audit=r.audit
+        )
         return json_response({'message': 'Rapport validé.', 'statut': r.statut})
     except Rapport.DoesNotExist:
         return json_response({'error': 'Rapport introuvable.'}, status=404)
@@ -160,6 +196,14 @@ def report_publier_view(request, report_id):
     try:
         r = Rapport.objects.get(id=report_id)
         r.publier()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="PUBLICATION_RAPPORT",
+            ressource=r.titre,
+            details=f"Publication du rapport '{r.titre}'.",
+            projet=r.audit.projet,
+            audit=r.audit
+        )
         return json_response({'message': 'Rapport publié avec succès.', 'statut': r.statut})
     except Rapport.DoesNotExist:
         return json_response({'error': 'Rapport introuvable.'}, status=404)
@@ -173,6 +217,15 @@ def report_telecharger_view(request, report_id):
     try:
         r = Rapport.objects.get(id=report_id)
         content = r.telecharger()
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="TELECHARGEMENT_RAPPORT",
+            ressource=r.titre,
+            details=f"Téléchargement du rapport [{r.format}] '{r.titre}'.",
+            projet=r.audit.projet,
+            audit=r.audit
+        )
 
         content_types = {
             FormatRapport.JSON: 'application/json',

@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Vulnerabilite, Preuve, Recommandation, Gravite, StatutVulnerabilite
 from audits.models import Audit
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -67,6 +68,15 @@ def vulns_list_create_view(request):
                 codeCWE=codeCWE,
                 confiance=confiance,
                 statut=StatutVulnerabilite.NOUVELLE
+            )
+
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="DETECTION_VULNERABILITE",
+                ressource=vuln.titre,
+                details=f"Déclaration de la vulnérabilité [{vuln.gravite}] '{vuln.titre}' (Score CVSS: {vuln.scoreCVSS}).",
+                projet=audit.projet,
+                audit=audit
             )
 
             return json_response({
@@ -136,9 +146,18 @@ def vuln_detail_view(request, vuln_id):
 
     elif request.method == 'DELETE':
         audit = vuln.audit
+        titre = vuln.titre
         vuln.delete()
         audit.calculerScore()
         audit.save(update_fields=['scoreSecurite'])
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="SUPPRESSION_VULNERABILITE",
+            ressource=titre,
+            details=f"Suppression de la vulnérabilité '{titre}'.",
+            projet=audit.projet,
+            audit=audit
+        )
         return json_response({'message': 'Vulnérabilité supprimée avec succès.'})
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
@@ -152,6 +171,14 @@ def vuln_confirmer_view(request, vuln_id):
     try:
         vuln = Vulnerabilite.objects.get(id=vuln_id)
         vuln.confirmer()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="CONFIRMATION_VULNERABILITE",
+            ressource=vuln.titre,
+            details=f"Confirmation de la vulnérabilité '{vuln.titre}'.",
+            projet=vuln.audit.projet,
+            audit=vuln.audit
+        )
         return json_response({'message': 'Vulnérabilité confirmée.', 'statut': vuln.statut})
     except Vulnerabilite.DoesNotExist:
         return json_response({'error': 'Vulnérabilité introuvable.'}, status=404)
@@ -165,6 +192,14 @@ def vuln_faux_positif_view(request, vuln_id):
     try:
         vuln = Vulnerabilite.objects.get(id=vuln_id)
         vuln.marquerFauxPositif()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="FAUX_POSITIF_VULNERABILITE",
+            ressource=vuln.titre,
+            details=f"Vulnérabilité '{vuln.titre}' marquée comme faux positif.",
+            projet=vuln.audit.projet,
+            audit=vuln.audit
+        )
         return json_response({'message': 'Vulnérabilité marquée comme faux positif.', 'statut': vuln.statut})
     except Vulnerabilite.DoesNotExist:
         return json_response({'error': 'Vulnérabilité introuvable.'}, status=404)
@@ -178,6 +213,14 @@ def vuln_corrigee_view(request, vuln_id):
     try:
         vuln = Vulnerabilite.objects.get(id=vuln_id)
         vuln.marquerCorrigee()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="CORRECTION_VULNERABILITE",
+            ressource=vuln.titre,
+            details=f"Vulnérabilité '{vuln.titre}' marquée comme corrigée.",
+            projet=vuln.audit.projet,
+            audit=vuln.audit
+        )
         return json_response({'message': 'Vulnérabilité marquée comme corrigée.', 'statut': vuln.statut})
     except Vulnerabilite.DoesNotExist:
         return json_response({'error': 'Vulnérabilité introuvable.'}, status=404)

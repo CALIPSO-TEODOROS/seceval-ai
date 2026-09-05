@@ -106,6 +106,16 @@ def audits_list_create_view(request):
                 webhookN8nUrl=webhook_n8n_url
             )
 
+            from logs_app.models import JournalActivite
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_AUDIT",
+                ressource=cible.valeur,
+                details=f"Création de l'audit '{audit.titre}' ({audit.get_type_display()}) sur {cible.valeur}.",
+                projet=projet,
+                audit=audit
+            )
+
             return json_response({
                 'message': 'Audit de sécurité créé avec succès.',
                 'audit': {
@@ -135,7 +145,7 @@ def audits_list_create_view(request):
 
 @csrf_exempt
 def audit_detail_view(request, audit_id):
-    """GET: Detail with Plan and Etapes. DELETE: Delete audit."""
+    """GET: Detail. DELETE: Delete audit."""
     try:
         audit = Audit.objects.select_related('projet', 'cible', 'lancePar').get(id=audit_id)
     except Audit.DoesNotExist:
@@ -143,24 +153,26 @@ def audit_detail_view(request, audit_id):
 
     if request.method == 'GET':
         plan_data = None
-        if hasattr(audit, 'plan'):
-            plan = audit.plan
-            etapes_data = []
-            for e in plan.etapes.all():
-                etapes_data.append({
+        if hasattr(audit, 'plan') and audit.plan:
+            etapes = []
+            for e in audit.plan.etapes.all():
+                etapes.append({
                     'id': str(e.id),
                     'ordre': e.ordre,
                     'nom': e.nom,
+                    'description': e.description,
+                    'commandesSimulees': e.commandesSimulees,
                     'statut': e.statut,
                     'statut_display': e.get_statut_display(),
                     'dateDebut': e.dateDebut.isoformat() if e.dateDebut else None,
                     'dateFin': e.dateFin.isoformat() if e.dateFin else None
                 })
             plan_data = {
-                'id': str(plan.id),
-                'description': plan.description,
-                'dateGeneration': plan.dateGeneration.isoformat(),
-                'etapes': etapes_data
+                'id': str(audit.plan.id),
+                'nom': audit.plan.nom,
+                'statutGlobal': audit.plan.statutGlobal,
+                'statutGlobal_display': audit.plan.get_statutGlobal_display(),
+                'etapes': etapes
             }
 
         return json_response({
@@ -185,8 +197,6 @@ def audit_detail_view(request, audit_id):
             'resultatBrutN8n': audit.resultatBrutN8n or {},
             'scoreSecurite': audit.scoreSecurite,
 
-
-
             'progression': audit.progression,
             'dateCreation': audit.dateCreation.isoformat(),
             'dateDebut': audit.dateDebut.isoformat() if audit.dateDebut else None,
@@ -194,9 +204,19 @@ def audit_detail_view(request, audit_id):
             'plan': plan_data
         })
 
-
     elif request.method == 'DELETE':
+        from logs_app.models import JournalActivite
+        cible_valeur = audit.cible.valeur
+        audit_titre = audit.titre or audit.cible.valeur
+        proj = audit.projet
         audit.delete()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="SUPPRESSION_AUDIT",
+            ressource=cible_valeur,
+            details=f"Suppression définitive de l'audit '{audit_titre}'.",
+            projet=proj
+        )
         return json_response({'message': 'Audit supprimé avec succès.'})
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
@@ -211,6 +231,15 @@ def audit_demarrer_view(request, audit_id):
     try:
         audit = Audit.objects.get(id=audit_id)
         audit.demarrer()
+        from logs_app.models import JournalActivite
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="DEMARRAGE_AUDIT",
+            ressource=audit.cible.valeur,
+            details=f"Démarrage de l'audit '{audit.titre or audit.get_type_display()}' sur {audit.cible.valeur}.",
+            projet=audit.projet,
+            audit=audit
+        )
         return json_response({
             'message': f'Audit {audit.get_type_display()} démarré avec succès sur {audit.cible.valeur}.',
             'audit': {
@@ -234,6 +263,15 @@ def audit_pause_view(request, audit_id):
     try:
         audit = Audit.objects.get(id=audit_id)
         audit.mettreEnPause()
+        from logs_app.models import JournalActivite
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="MISE_EN_PAUSE_AUDIT",
+            ressource=audit.cible.valeur,
+            details=f"Mise en pause de l'audit '{audit.titre or audit.cible.valeur}'.",
+            projet=audit.projet,
+            audit=audit
+        )
         return json_response({'message': 'Audit mis en pause.', 'statut': audit.statut})
     except Audit.DoesNotExist:
         return json_response({'error': 'Audit introuvable.'}, status=404)
@@ -248,6 +286,15 @@ def audit_arreter_view(request, audit_id):
     try:
         audit = Audit.objects.get(id=audit_id)
         audit.arreter()
+        from logs_app.models import JournalActivite
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="ARRET_AUDIT",
+            ressource=audit.cible.valeur,
+            details=f"Arrêt/annulation de l'audit '{audit.titre or audit.cible.valeur}'.",
+            projet=audit.projet,
+            audit=audit
+        )
         return json_response({'message': 'Audit arrêté / annulé.', 'statut': audit.statut})
     except Audit.DoesNotExist:
         return json_response({'error': 'Audit introuvable.'}, status=404)

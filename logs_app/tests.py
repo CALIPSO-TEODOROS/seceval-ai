@@ -57,7 +57,7 @@ class JournalAPITests(TestCase):
         data = res.json()
         self.assertGreaterEqual(data['total'], 1)
 
-        # Create Log via API
+        # Manual Log Creation should be disabled (HTTP 403)
         res_create = self.client.post(
             reverse('logs_app:list-create'),
             data=json.dumps({
@@ -69,13 +69,17 @@ class JournalAPITests(TestCase):
             }),
             content_type='application/json'
         )
-        self.assertEqual(res_create.status_code, 201)
+        self.assertEqual(res_create.status_code, 403)
 
     def test_log_detail_api(self):
         res_det = self.client.get(reverse('logs_app:detail', kwargs={'log_id': self.log.id}))
         self.assertEqual(res_det.status_code, 200)
         data = res_det.json()
         self.assertEqual(data['action'], 'CONNEXION')
+
+        # Log deletion should be forbidden (HTTP 403)
+        res_del = self.client.delete(reverse('logs_app:detail', kwargs={'log_id': self.log.id}))
+        self.assertEqual(res_del.status_code, 403)
 
     def test_seed_logs_command(self):
         call_command('seed_logs')

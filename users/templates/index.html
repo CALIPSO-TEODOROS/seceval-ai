@@ -550,37 +550,13 @@
 
             <!-- TAB: LOGS -->
             <div id="tab-logs" class="tab-pane">
-                <div class="card">
+                <div class="card" style="border-left: 4px solid #38bdf8;">
                     <div class="card-header">
-                        <h3 class="card-title">Enregistrer un Événement d'Activité (`JournalActivite.enregistrer()`)</h3>
+                        <h3 class="card-title">🔒 Traçabilité & Journalisation Automatique Infalsifiable</h3>
                     </div>
-                    <form onsubmit="handleCreateLog(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Utilisateur Initiateur (`Utilisateur`)</label>
-                                <select id="log-user-select" class="form-control" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Action Effectuée</label>
-                                <input type="text" id="log-action" class="form-control" placeholder="ex: CREATION_PROJET ou SCAN_ACTIF" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Ressource Ciblée</label>
-                                <input type="text" id="log-ressource" class="form-control" placeholder="ex: Projet Fintech / API Target" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Adresse IP Source</label>
-                                <input type="text" id="log-ip" class="form-control" value="192.168.1.100">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Détails Techniques / Contextuels</label>
-                            <input type="text" id="log-details" class="form-control" placeholder="Détails de l'opération de sécurité">
-                        </div>
-                        <button type="submit" class="btn">Enregistrer l'Événement</button>
-                    </form>
+                    <div style="padding: 0 20px 20px 20px; color: #94a3b8; line-height: 1.6;">
+                        <p style="margin: 0;">L'ensemble des actions et opérations de l'application (connexions, déconnexions, créations de projets/cibles, démarrages d'audits, déclarations de vulnérabilités, publications de rapports, notifications) sont <strong>automatiquement journalisées en temps réel</strong> par SecEval AI. L'enregistrement et la suppression manuels des journaux sont désactivés pour garantir l'intégrité du journal de sécurité.</p>
+                    </div>
                 </div>
 
                 <div class="card">

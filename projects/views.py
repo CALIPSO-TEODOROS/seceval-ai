@@ -13,6 +13,7 @@ from .models import (
     Environnement,
     StatutCible
 )
+from logs_app.models import JournalActivite
 
 
 def json_response(data, status=200):
@@ -55,6 +56,14 @@ def projects_list_create_view(request):
                 organisation=organisation,
                 description=description,
                 statut=statut
+            )
+
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_PROJET",
+                ressource=project.nom,
+                details=f"Création du projet '{project.nom}' (Organisation: {project.organisation}).",
+                projet=project
             )
 
             return json_response({
@@ -117,6 +126,13 @@ def project_detail_view(request, project_id):
                 organisation=data.get('organisation'),
                 statut=data.get('statut')
             )
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="MODIFICATION_PROJET",
+                ressource=project.nom,
+                details=f"Modification des informations du projet '{project.nom}'.",
+                projet=project
+            )
             return json_response({
                 'message': 'Projet mis à jour avec succès.',
                 'project': {
@@ -130,7 +146,14 @@ def project_detail_view(request, project_id):
             return json_response({'error': str(e)}, status=400)
 
     elif request.method == 'DELETE':
+        nom_proj = project.nom
         project.supprimer()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="SUPPRESSION_PROJET",
+            ressource=nom_proj,
+            details=f"Suppression définitive du projet '{nom_proj}'."
+        )
         return json_response({'message': 'Projet supprimé avec succès.'})
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
@@ -145,6 +168,13 @@ def project_archive_view(request, project_id):
     try:
         project = Projet.objects.get(id=project_id)
         project.archiver()
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="ARCHIVAGE_PROJET",
+            ressource=project.nom,
+            details=f"Archivage du projet '{project.nom}'.",
+            projet=project
+        )
         return json_response({
             'message': f'Le projet {project.nom} a été archivé avec succès.',
             'project': {
@@ -206,6 +236,14 @@ def project_cibles_view(request, project_id):
             # Auto-verify accessibility
             accessible, acc_msg = cible.verifierAccessibilite()
 
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_CIBLE",
+                ressource=cible.valeur,
+                details=f"Ajout de la cible '{cible.valeur}' ({cible.get_type_display()}) au projet '{project.nom}'.",
+                projet=project
+            )
+
             return json_response({
                 'message': 'Cible ajoutée au projet avec succès.',
                 'cible': {
@@ -233,6 +271,14 @@ def cible_verify_view(request, cible_id):
         cible = Cible.objects.get(id=cible_id)
         access_ok, access_msg = cible.verifierAccessibilite()
         auth_ok, auth_msg = cible.verifierAutorisation()
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="VERIFICATION_CIBLE",
+            ressource=cible.valeur,
+            details=f"Vérification d'accessibilité ({access_ok}) et d'autorisation ({auth_ok}) sur '{cible.valeur}'.",
+            projet=cible.projet
+        )
 
         return json_response({
             'cible_id': str(cible.id),
@@ -278,7 +324,6 @@ def cible_authorizations_view(request, cible_id):
             if isinstance(date_fin, str):
                 date_fin = datetime.date.fromisoformat(date_fin)
 
-
             auth = AutorisationCible.objects.create(
                 cible=cible,
                 dateDebut=date_debut,
@@ -286,6 +331,14 @@ def cible_authorizations_view(request, cible_id):
                 preuve=preuve,
                 testsActifsAutorises=tests_actifs,
                 commentaire=commentaire
+            )
+
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="AJOUT_AUTORISATION_SCAN",
+                ressource=cible.valeur,
+                details=f"Ajout d'une autorisation de scan pour la cible '{cible.valeur}' (Preuve: {preuve}).",
+                projet=cible.projet
             )
 
 
