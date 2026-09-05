@@ -120,7 +120,7 @@ class Audit(models.Model):
     webhookN8nUrl = models.URLField(
         max_length=500,
         blank=True,
-        default="https://n8n.zendaya.tech/webhook-test/ad59815e-2809-4f25-a120-b24b5f02a831",
+        default="https://n8n.zendaya.tech/webhook/ad59815e-2809-4f25-a120-b24b5f02a831",
         verbose_name="URL Trigger Webhook n8n"
     )
     emailsNotification = models.TextField(

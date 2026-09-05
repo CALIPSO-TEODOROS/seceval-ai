@@ -67,7 +67,7 @@ class Command(BaseCommand):
             frequence="HEBDOMADAIRE",
             heureExecution=timezone.datetime.strptime("14:30", "%H:%M").time(),
             prochaineExecution=timezone.now() + timezone.timedelta(days=7),
-            webhookN8nUrl="https://n8n.zendaya.tech/webhook-test/ad59815e-2809-4f25-a120-b24b5f02a831",
+            webhookN8nUrl="https://n8n.zendaya.tech/webhook/ad59815e-2809-4f25-a120-b24b5f02a831",
             progression=40
         )
         audit2.demarrer()

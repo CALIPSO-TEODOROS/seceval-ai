@@ -70,7 +70,7 @@ def audits_list_create_view(request):
             frequence = data.get('frequence', 'AUCUNE')
             heure_execution_str = data.get('heureExecution')
             prochaine_exec = data.get('prochaineExecution')
-            webhook_n8n_url = data.get('webhookN8nUrl', '').strip() or 'https://n8n.zendaya.tech/webhook-test/ad59815e-2809-4f25-a120-b24b5f02a831'
+            webhook_n8n_url = data.get('webhookN8nUrl', '').strip() or 'https://n8n.zendaya.tech/webhook/ad59815e-2809-4f25-a120-b24b5f02a831'
             emails_notification = data.get('emailsNotification', '').strip()
 
             if not projet_id or not cible_id:
