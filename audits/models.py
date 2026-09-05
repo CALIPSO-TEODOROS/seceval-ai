@@ -173,6 +173,7 @@ class Audit(models.Model):
             f"INSTRUCTION AGENT IA: Veuillez analyser les objectifs métiers et exécuter les étapes du scan de sécurité d'après les directives ci-dessus."
         )
 
+        callback_url = f"https://secu.zendaya.tech/api/audits/{self.id}/callback/"
         query_params = {
             'prompt': prompt_ia,
             'contexte': contexte_text,
@@ -180,7 +181,8 @@ class Audit(models.Model):
             'cible': self.cible.valeur,
             'projet': self.projet.nom,
             'type': self.type,
-            'audit_id': str(self.id)
+            'audit_id': str(self.id),
+            'callback_url': callback_url
         }
 
 
