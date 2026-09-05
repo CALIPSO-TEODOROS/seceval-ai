@@ -24,8 +24,8 @@ def notifications_list_create_view(request):
         for n in queryset:
             notifs_data.append({
                 'id': str(n.id),
-                'destinataire': {'id': str(n.destinataire.id), 'nom': n.destinataire.nom, 'email': n.destinataire.email},
-                'audit': {'id': str(n.audit.id), 'cible': n.audit.cible.valeur} if n.audit else None,
+                'destinataire': {'id': str(n.destinataire.id), 'nom': n.destinataire.nom, 'email': n.destinataire.email} if n.destinataire else {'id': None, 'nom': 'Système', 'email': 'systeme@seceval.io'},
+                'audit': {'id': str(n.audit.id), 'cible': n.audit.cible.valeur} if (n.audit and n.audit.cible) else None,
                 'canal': n.canal,
                 'canal_display': n.get_canal_display(),
                 'sujet': n.sujet,

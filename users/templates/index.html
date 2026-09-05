@@ -1446,13 +1446,27 @@
             }
         }
 
-        function switchTab(tabId) {
+        function switchTab(tabId, el) {
             toggleMobileSidebar(false);
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
-            document.getElementById('tab-' + tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            const targetPane = document.getElementById('tab-' + tabId);
+            if (targetPane) targetPane.classList.add('active');
+
+            if (el) {
+                el.classList.add('active');
+            } else if (typeof event !== 'undefined' && event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            } else {
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    const onclickAttr = item.getAttribute('onclick') || '';
+                    if (onclickAttr.includes(`'${tabId}'`) || onclickAttr.includes(`"${tabId}"`)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
 
             const titles = {
                 'dashboard': 'Vue d\'ensemble',
@@ -1605,12 +1619,14 @@
                 const data = await res.json();
 
                 const tbody = document.getElementById('logs-table-body');
+                if (!tbody) return;
                 tbody.innerHTML = '';
                 data.logs.forEach(l => {
+                    const userName = (l.utilisateur && l.utilisateur.nom) ? l.utilisateur.nom : (typeof l.utilisateur === 'string' ? l.utilisateur : 'Système');
                     tbody.innerHTML += `
                         <tr>
                             <td>${new Date(l.dateAction).toLocaleString()}</td>
-                            <td><strong>${l.utilisateur.nom}</strong></td>
+                            <td><strong>${userName}</strong></td>
                             <td><span class="badge badge-INVITE">${l.action}</span></td>
                             <td>${l.ressource}</td>
                             <td><code>${l.adresseIP}</code></td>
@@ -1648,12 +1664,15 @@
                 const data = await res.json();
 
                 const tbody = document.getElementById('notifs-table-body');
+                if (!tbody) return;
                 tbody.innerHTML = '';
                 data.notifications.forEach(n => {
+                    const destNom = (n.destinataire && n.destinataire.nom) ? n.destinataire.nom : (typeof n.destinataire === 'string' ? n.destinataire : 'Système');
+                    const destEmail = (n.destinataire && n.destinataire.email) ? `(${n.destinataire.email})` : '';
                     tbody.innerHTML += `
                         <tr>
                             <td><span class="badge badge-INVITE">${n.canal}</span></td>
-                            <td><strong>${n.destinataire.nom}</strong> (${n.destinataire.email})</td>
+                            <td><strong>${destNom}</strong> ${destEmail}</td>
                             <td><strong>${n.sujet}</strong></td>
                             <td><span class="badge badge-${n.statut}">${n.statut}</span></td>
                             <td>${n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : 'En attente'}</td>

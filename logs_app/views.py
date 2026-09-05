@@ -35,7 +35,7 @@ def logs_list_create_view(request):
                     'id': str(log.utilisateur.id),
                     'nom': log.utilisateur.nom,
                     'email': log.utilisateur.email
-                },
+                } if log.utilisateur else {'id': None, 'nom': 'Système', 'email': 'systeme@seceval.io'},
                 'projet': {'id': str(log.projet.id), 'nom': log.projet.nom} if log.projet else None,
                 'audit': {'id': str(log.audit.id), 'cible': log.audit.cible.valeur} if log.audit else None,
                 'action': log.action,
