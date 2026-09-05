@@ -303,8 +303,94 @@ def user_role_change_view(request, user_id):
 
 
 @csrf_exempt
+def permissions_list_view(request):
+    """GET: Liste de toutes les permissions. POST: Créer/mettre à jour une permission."""
+    if request.method == 'GET':
+        permissions = Permission.objects.all()
+        perms_data = [{'id': str(p.id), 'code': p.code, 'description': p.description} for p in permissions]
+        return json_response({'permissions': perms_data})
+
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            code = data.get('code')
+            description = data.get('description', '')
+
+            if not code or not str(code).strip():
+                return json_response({'error': 'Le code de la permission est requis.'}, status=400)
+
+            code = str(code).strip().upper()
+            perm, created = Permission.objects.get_or_create(code=code, defaults={'description': description})
+            if not created:
+                perm.description = description
+                perm.save()
+
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_PERMISSION" if created else "MODIFICATION_PERMISSION",
+                ressource=code,
+                details=f"{'Création' if created else 'Modification'} de la permission '{code}'."
+            )
+
+            return json_response({
+                'message': 'Permission enregistrée avec succès.',
+                'permission': {'id': str(perm.id), 'code': perm.code, 'description': perm.description}
+            }, status=201 if created else 200)
+        except Exception as e:
+            return json_response({'error': str(e)}, status=400)
+
+    return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+
+@csrf_exempt
+def permission_detail_view(request, perm_id):
+    """DELETE: Supprimer une permission système."""
+    if request.method == 'DELETE':
+        try:
+            perm = Permission.objects.get(id=perm_id)
+            code = perm.code
+            perm.delete()
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="SUPPRESSION_PERMISSION",
+                ressource=code,
+                details=f"Suppression de la permission '{code}'."
+            )
+            return json_response({'message': f"Permission '{code}' supprimée avec succès."})
+        except Permission.DoesNotExist:
+            return json_response({'error': 'Permission non trouvée.'}, status=404)
+        except Exception as e:
+            return json_response({'error': str(e)}, status=400)
+
+    return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+
+@csrf_exempt
+def role_detail_view(request, role_id):
+    """DELETE: Supprimer un rôle."""
+    if request.method == 'DELETE':
+        try:
+            role = Role.objects.get(id=role_id)
+            nom = role.nom
+            role.delete()
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="SUPPRESSION_ROLE",
+                ressource=nom,
+                details=f"Suppression du rôle '{nom}'."
+            )
+            return json_response({'message': f"Rôle '{nom}' supprimé avec succès."})
+        except Role.DoesNotExist:
+            return json_response({'error': 'Rôle non trouvé.'}, status=404)
+        except Exception as e:
+            return json_response({'error': str(e)}, status=400)
+
+    return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+
+@csrf_exempt
 def roles_list_view(request):
-    """GET: Liste des rôles et permissions. POST: Créer un nouveau rôle."""
+    """GET: Liste des rôles et permissions. POST: Créer ou modifier un rôle."""
     if request.method == 'GET':
         roles = Role.objects.all()
         permissions = Permission.objects.all()
@@ -328,6 +414,7 @@ def roles_list_view(request):
     elif request.method == 'POST':
         try:
             data = json.loads(request.body)
+            role_id = data.get('id')
             nom = data.get('nom')
             description = data.get('description', '')
             perm_codes = data.get('permissions', [])
@@ -335,24 +422,42 @@ def roles_list_view(request):
             if not nom:
                 return json_response({'error': 'Le nom du rôle est requis.'}, status=400)
 
-            role, created = Role.objects.get_or_create(nom=nom, defaults={'description': description})
-            if not created:
-                role.description = description
-                role.save()
+            if role_id:
+                try:
+                    role = Role.objects.get(id=role_id)
+                    role.nom = nom
+                    role.description = description
+                    role.save()
+                    created = False
+                except Role.DoesNotExist:
+                    role = Role.objects.create(nom=nom, description=description)
+                    created = True
+            else:
+                role, created = Role.objects.get_or_create(nom=nom, defaults={'description': description})
+                if not created:
+                    role.description = description
+                    role.save()
 
-            if perm_codes:
-                perms = Permission.objects.filter(code__in=perm_codes)
-                role.permissions.set(perms)
+            if perm_codes is not None:
+                perms = Permission.objects.filter(code__in=perm_codes) | Permission.objects.filter(id__in=[p for p in perm_codes if len(str(p)) == 36])
+                role.permissions.set(perms.distinct())
+
+            JournalActivite.enregistrer_depuis_requete(
+                request,
+                action="CREATION_ROLE" if created else "MODIFICATION_ROLE",
+                ressource=role.nom,
+                details=f"{'Création' if created else 'Modification'} du rôle '{role.nom}' avec permissions {[p.code for p in role.permissions.all()]}."
+            )
 
             return json_response({
-                'message': 'Rôle créé ou mis à jour avec succès.',
+                'message': 'Rôle enregistré avec succès.',
                 'role': {
                     'id': str(role.id),
                     'nom': role.nom,
                     'description': role.description,
                     'permissions': [p.code for p in role.permissions.all()]
                 }
-            }, status=201)
+            }, status=201 if created else 200)
         except Exception as e:
             return json_response({'error': str(e)}, status=400)
 

@@ -1266,39 +1266,91 @@
 
             <!-- TAB: ROLES & PERMISSIONS -->
             <div id="tab-roles" class="tab-pane">
+                <!-- 1. GESTION DES PERMISSIONS SYSTEME -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Créer un Rôle</h3>
+                        <h3 class="card-title">Créer une Permission Système (`Permission`)</h3>
                     </div>
-                    <form onsubmit="handleCreateRole(event)">
-                        <div class="form-group">
-                            <label>Nom du Rôle</label>
-                            <input type="text" id="new-role-nom" class="form-control" placeholder="ex: Auditeur Sécurité" required>
+                    <form onsubmit="handleCreatePermission(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Code de la Permission</label>
+                                <input type="text" id="new-perm-code" class="form-control" placeholder="ex: PERM_AUDIT_EXECUTE" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <input type="text" id="new-perm-desc" class="form-control" placeholder="Description des privilèges de la permission">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" id="new-role-desc" class="form-control" placeholder="Description des privilèges">
-                        </div>
-                        <button type="submit" class="btn">Enregistrer le Rôle</button>
+                        <button type="submit" class="btn">Créer / Mettre à jour la Permission</button>
                     </form>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Rôles Définis</h3>
+                        <h3 class="card-title">Permissions Système Définies</h3>
                     </div>
                     <div class="table-responsive">
-<table>
-                        <thead>
-                            <tr>
-                                <th>Rôle</th>
-                                <th>Description</th>
-                                <th>Permissions Associées</th>
-                            </tr>
-                        </thead>
-                        <tbody id="roles-table-body"></tbody>
-                    </table>
-</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code Permission</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissions-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. GESTION DES ROLES & PERMISSIONS ASSOCIEES -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" id="role-form-title">Créer un Rôle & Attribuer des Permissions</h3>
+                    </div>
+                    <form onsubmit="handleSaveRole(event)">
+                        <input type="hidden" id="edit-role-id" value="">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nom du Rôle</label>
+                                <input type="text" id="new-role-nom" class="form-control" placeholder="ex: Auditeur Sécurité" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Description du Rôle</label>
+                                <input type="text" id="new-role-desc" class="form-control" placeholder="Description des privilèges du rôle">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Permissions Système à Attribuer</label>
+                            <div id="role-permissions-checklist" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
+                                <small style="color: var(--text-muted);">Chargement des permissions...</small>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button type="submit" class="btn" id="save-role-btn">Enregistrer le Rôle</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-edit-role-btn" style="display:none;" onclick="resetRoleForm()">Annuler l'Édition</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Rôles Définis & Permissions Associées</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rôle</th>
+                                    <th>Description</th>
+                                    <th>Permissions Associées</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roles-table-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -2337,14 +2389,236 @@
             }
         }
 
+        let globalPermissionsList = [];
+        let globalRolesList = [];
+
         async function loadRoles() {
-            const res = await fetch('/api/users/roles/');
-            const data = await res.json();
-            const tbody = document.getElementById('roles-table-body');
+            await loadRolesAndPermissions();
+        }
+
+        async function loadRolesAndPermissions() {
+            try {
+                const res = await fetch('/api/users/roles/');
+                const data = await res.json();
+                
+                globalRolesList = data.roles || [];
+                globalPermissionsList = data.permissions || [];
+
+                renderPermissionsTable(globalPermissionsList);
+                renderPermissionsChecklist(globalPermissionsList);
+                renderRolesTable(globalRolesList);
+            } catch (err) {
+                console.error("Erreur lors du chargement des rôles et permissions:", err);
+            }
+        }
+
+        function renderPermissionsTable(permissions) {
+            const tbody = document.getElementById('permissions-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            data.roles.forEach(role => {
-                tbody.innerHTML += `<tr><td><strong>${role.nom}</strong></td><td>${role.description || '-'}</td><td>${role.permissions.map(p => `<span class="badge badge-INVITE">${p}</span>`).join(' ') || 'Aucune'}</td></tr>`;
+
+            if (!permissions || permissions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Aucune permission système définie.</td></tr>';
+                return;
+            }
+
+            permissions.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><code>${p.code}</code></td>
+                        <td>${p.description || '-'}</td>
+                        <td>
+                            <button class="btn-action danger" onclick="handleDeletePermission('${p.id}', '${p.code}')" title="Supprimer la permission">🗑️ Supprimer</button>
+                        </td>
+                    </tr>
+                `;
             });
+        }
+
+        function renderPermissionsChecklist(permissions, selectedPermCodes = []) {
+            const container = document.getElementById('role-permissions-checklist');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!permissions || permissions.length === 0) {
+                container.innerHTML = '<small style="color:var(--text-muted);">Aucune permission disponible dans le système.</small>';
+                return;
+            }
+
+            permissions.forEach(p => {
+                const isChecked = selectedPermCodes.includes(p.code) ? 'checked' : '';
+                container.innerHTML += `
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:normal;">
+                        <input type="checkbox" class="role-perm-checkbox" value="${p.code}" ${isChecked}>
+                        <span><strong>${p.code}</strong> ${p.description ? `<small style="color:var(--text-muted);">(${p.description})</small>` : ''}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function renderRolesTable(roles) {
+            const tbody = document.getElementById('roles-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!roles || roles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun rôle défini.</td></tr>';
+                return;
+            }
+
+            roles.forEach(role => {
+                const permBadges = (role.permissions && role.permissions.length > 0)
+                    ? role.permissions.map(p => `<span class="badge badge-INVITE" style="margin-right:4px;">${p}</span>`).join('')
+                    : '<span style="color:var(--text-muted); font-size:12px;">Aucune permission</span>';
+
+                const roleJson = JSON.stringify(role).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${role.nom}</strong></td>
+                        <td>${role.description || '-'}</td>
+                        <td>${permBadges}</td>
+                        <td>
+                            <button class="btn-action" onclick='editRole(${roleJson})' title="Éditer le rôle">✏️ Éditer</button>
+                            <button class="btn-action danger" onclick="handleDeleteRole('${role.id}', '${role.nom}')" title="Supprimer le rôle">🗑️ Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function handleCreatePermission(e) {
+            e.preventDefault();
+            const codeInput = document.getElementById('new-perm-code');
+            const descInput = document.getElementById('new-perm-desc');
+            const code = codeInput.value;
+            const description = descInput.value;
+
+            try {
+                const res = await fetch('/api/users/permissions/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, description })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(data.message || 'Permission enregistrée avec succès.');
+                    codeInput.value = '';
+                    descInput.value = '';
+                    await loadRolesAndPermissions();
+                } else {
+                    showToast(data.error || "Erreur lors de l'enregistrement de la permission.", 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur lors de la création de la permission.', 'danger');
+            }
+        }
+
+        async function handleDeletePermission(permId, permCode) {
+            if (!confirm(`Voulez-vous vraiment supprimer la permission "${permCode}" ?`)) return;
+
+            try {
+                const res = await fetch(`/api/users/permissions/${permId}/`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(data.message || 'Permission supprimée.');
+                    await loadRolesAndPermissions();
+                } else {
+                    showToast(data.error || 'Impossible de supprimer la permission.', 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur.', 'danger');
+            }
+        }
+
+        function editRole(role) {
+            document.getElementById('edit-role-id').value = role.id;
+            document.getElementById('new-role-nom').value = role.nom;
+            document.getElementById('new-role-desc').value = role.description || '';
+
+            document.getElementById('role-form-title').innerText = `Éditer le Rôle "${role.nom}"`;
+            document.getElementById('save-role-btn').innerText = 'Mettre à jour le Rôle';
+            document.getElementById('cancel-edit-role-btn').style.display = 'inline-block';
+
+            renderPermissionsChecklist(globalPermissionsList, role.permissions || []);
+        }
+
+        function resetRoleForm() {
+            document.getElementById('edit-role-id').value = '';
+            document.getElementById('new-role-nom').value = '';
+            document.getElementById('new-role-desc').value = '';
+
+            document.getElementById('role-form-title').innerText = 'Créer un Rôle & Attribuer des Permissions';
+            document.getElementById('save-role-btn').innerText = 'Enregistrer le Rôle';
+            document.getElementById('cancel-edit-role-btn').style.display = 'none';
+
+            renderPermissionsChecklist(globalPermissionsList, []);
+        }
+
+        async function handleSaveRole(e) {
+            e.preventDefault();
+            const roleId = document.getElementById('edit-role-id').value;
+            const nom = document.getElementById('new-role-nom').value;
+            const description = document.getElementById('new-role-desc').value;
+
+            const checkedPerms = Array.from(document.querySelectorAll('.role-perm-checkbox:checked')).map(cb => cb.value);
+
+            const payload = {
+                nom: nom,
+                description: description,
+                permissions: checkedPerms
+            };
+
+            if (roleId) {
+                payload.id = roleId;
+            }
+
+            try {
+                const res = await fetch('/api/users/roles/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(data.message || 'Rôle enregistré avec succès !');
+                    resetRoleForm();
+                    await loadRolesAndPermissions();
+                } else {
+                    showToast(data.error || "Erreur lors de l'enregistrement du rôle.", 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur lors de la sauvegarde du rôle.', 'danger');
+            }
+        }
+
+        async function handleDeleteRole(roleId, roleNom) {
+            if (!confirm(`Voulez-vous vraiment supprimer le rôle "${roleNom}" ?`)) return;
+
+            try {
+                const res = await fetch(`/api/users/roles/${roleId}/`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(data.message || 'Rôle supprimé.');
+                    await loadRolesAndPermissions();
+                } else {
+                    showToast(data.error || 'Impossible de supprimer le rôle.', 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur serveur.', 'danger');
+            }
         }
 
         async function loadMembers() {
@@ -2356,19 +2630,6 @@
             data.members.forEach(member => {
                 tbody.innerHTML += `<tr><td><strong>${member.nom}</strong></td><td>${member.email}</td><td>${new Date(member.dateAffectation).toLocaleString()}</td><td><span class="badge ${member.actif ? 'badge-ACTIF' : 'badge-DESACTIVE'}">${member.actif ? 'Actif' : 'Inactif'}</span></td></tr>`;
             });
-        }
-
-        async function handleCreateRole(e) {
-            e.preventDefault();
-            const nom = document.getElementById('new-role-nom').value;
-            const description = document.getElementById('new-role-desc').value;
-
-            const res = await fetch('/api/users/roles/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nom, description })
-            });
-            if (res.ok) { showToast('Rôle créé avec succès'); loadRoles(); }
         }
 
         async function handleAssignMember(e) {

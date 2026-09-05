@@ -284,6 +284,64 @@ class UserManagementAPITests(TestCase):
         )
         self.assertEqual(member_response.status_code, 201)
 
+    def test_permissions_api_crud(self):
+        # GET permissions
+        get_res = self.client.get(reverse('users:permissions-list'))
+        self.assertEqual(get_res.status_code, 200)
+
+        # POST create permission
+        post_res = self.client.post(
+            reverse('users:permissions-list'),
+            data=json.dumps({'code': 'PERM_TEST_API', 'description': 'Permission de test'}),
+            content_type='application/json'
+        )
+        self.assertEqual(post_res.status_code, 201)
+        perm = Permission.objects.get(code='PERM_TEST_API')
+
+        # DELETE permission
+        del_res = self.client.delete(reverse('users:permission-detail', kwargs={'perm_id': perm.id}))
+        self.assertEqual(del_res.status_code, 200)
+        self.assertFalse(Permission.objects.filter(code='PERM_TEST_API').exists())
+
+    def test_role_permissions_assignment_and_deletion(self):
+        perm1 = Permission.objects.create(code='PERM_TEST_1', description='P1')
+        perm2 = Permission.objects.create(code='PERM_TEST_2', description='P2')
+
+        # Create role with permissions
+        role_res = self.client.post(
+            reverse('users:roles-list'),
+            data=json.dumps({
+                'nom': 'Role Test Perms',
+                'description': 'Description Role',
+                'permissions': ['PERM_TEST_1', 'PERM_TEST_2']
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(role_res.status_code, 201)
+        role = Role.objects.get(nom='Role Test Perms')
+        self.assertEqual(role.permissions.count(), 2)
+
+        # Update role permissions
+        edit_res = self.client.post(
+            reverse('users:roles-list'),
+            data=json.dumps({
+                'id': str(role.id),
+                'nom': 'Role Test Perms Updated',
+                'description': 'Updated Desc',
+                'permissions': ['PERM_TEST_1']
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(edit_res.status_code, 200)
+        role.refresh_from_db()
+        self.assertEqual(role.nom, 'Role Test Perms Updated')
+        self.assertEqual(role.permissions.count(), 1)
+
+        # Delete role
+        del_role_res = self.client.delete(reverse('users:role-detail', kwargs={'role_id': role.id}))
+        self.assertEqual(del_role_res.status_code, 200)
+        self.assertFalse(Role.objects.filter(id=role.id).exists())
+
     def test_seed_users_command(self):
         call_command('seed_users')
         self.assertTrue(Utilisateur.objects.filter(email='admin@seceval.io').exists())
