@@ -533,6 +533,7 @@ def audit_callback_n8n_view(request, audit_id):
             )
             filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.pdf"
             filepath = os.path.join(dir_path, filename)
+            rapport_html_body = rapport_text.replace('\n', '<br>')
             html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -546,7 +547,7 @@ hr {{ border-color: #334155; }}
 </style>
 </head>
 <body>
-<div>{rapport_text.replace('\n', '<br>')}</div>
+<div>{rapport_html_body}</div>
 </body>
 </html>"""
             with open(filepath, 'w', encoding='utf-8') as f:
