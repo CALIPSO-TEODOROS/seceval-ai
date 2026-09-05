@@ -123,6 +123,11 @@ class Audit(models.Model):
         default="",
         verbose_name="URL Trigger Webhook n8n"
     )
+    emailsNotification = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Adresses email de notification (séparées par des virgules)"
+    )
     dateCreation = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     dateDebut = models.DateTimeField(null=True, blank=True, verbose_name="Date de début")
     dateDernierLancement = models.DateTimeField(null=True, blank=True, verbose_name="Date du dernier lancement")

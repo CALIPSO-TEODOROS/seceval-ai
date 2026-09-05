@@ -56,7 +56,7 @@ class NotificationAPITests(TestCase):
         data = res.json()
         self.assertGreaterEqual(data['total'], 1)
 
-        # Create & Send Notification
+        # Manual POST disabled -> expect 403 Forbidden
         res_create = self.client.post(
             reverse('notifications_app:list-create'),
             data=json.dumps({
@@ -68,7 +68,7 @@ class NotificationAPITests(TestCase):
             }),
             content_type='application/json'
         )
-        self.assertEqual(res_create.status_code, 201)
+        self.assertEqual(res_create.status_code, 403)
 
     def test_notification_detail_and_envoyer_api(self):
         # Detail

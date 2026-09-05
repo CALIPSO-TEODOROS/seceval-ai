@@ -46,6 +46,7 @@ def audits_list_create_view(request):
                 'prochaineExecution': a.prochaineExecution.isoformat() if a.prochaineExecution else None,
                 'dateDernierLancement': a.dateDernierLancement.isoformat() if a.dateDernierLancement else None,
                 'webhookN8nUrl': a.webhookN8nUrl,
+                'emailsNotification': a.emailsNotification,
                 'resultatBrutN8n': a.resultatBrutN8n or {},
                 'scoreSecurite': a.scoreSecurite,
                 'progression': a.progression,
@@ -70,6 +71,7 @@ def audits_list_create_view(request):
             heure_execution_str = data.get('heureExecution')
             prochaine_exec = data.get('prochaineExecution')
             webhook_n8n_url = data.get('webhookN8nUrl', '').strip()
+            emails_notification = data.get('emailsNotification', '').strip()
 
             if not projet_id or not cible_id:
                 return json_response({'error': 'Le projet_id et la cible_id sont obligatoires.'}, status=400)
@@ -103,7 +105,8 @@ def audits_list_create_view(request):
                 frequence=frequence,
                 heureExecution=heure_exec,
                 prochaineExecution=prochaine_exec,
-                webhookN8nUrl=webhook_n8n_url
+                webhookN8nUrl=webhook_n8n_url,
+                emailsNotification=emails_notification
             )
 
             from logs_app.models import JournalActivite
@@ -194,6 +197,7 @@ def audit_detail_view(request, audit_id):
             'prochaineExecution': audit.prochaineExecution.isoformat() if audit.prochaineExecution else None,
             'dateDernierLancement': audit.dateDernierLancement.isoformat() if audit.dateDernierLancement else None,
             'webhookN8nUrl': audit.webhookN8nUrl,
+            'emailsNotification': audit.emailsNotification,
             'resultatBrutN8n': audit.resultatBrutN8n or {},
             'scoreSecurite': audit.scoreSecurite,
 
@@ -309,6 +313,7 @@ def audit_terminer_view(request, audit_id):
     try:
         audit = Audit.objects.get(id=audit_id)
         audit.terminer()
+        send_audit_completion_notifications(audit)
         return json_response({
             'message': 'Audit terminé avec succès.',
             'audit': {
@@ -375,6 +380,90 @@ def audit_etape_update_view(request, etape_id):
         return json_response({'error': str(e)}, status=400)
 
 
+def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
+    """
+    Envoie automatiquement un email avec le rapport d'audit en pièce jointe 
+    aux adresses emails configurées dans audit.emailsNotification (ou à l'utilisateur qui a lancé l'audit).
+    Crée également l'enregistrement de notification correspondant en base.
+    """
+    from django.core.mail import EmailMessage
+    from notifications_app.models import Notification, CanalNotification
+    from users.models import Utilisateur
+
+    recipients = []
+    if audit.emailsNotification:
+        raw_list = audit.emailsNotification.replace(';', ',').split(',')
+        recipients = [e.strip() for e in raw_list if e.strip()]
+
+    if not recipients and audit.lancePar and audit.lancePar.email:
+        recipients = [audit.lancePar.email]
+
+    if not recipients:
+        first_user = Utilisateur.objects.first()
+        if first_user and first_user.email:
+            recipients = [first_user.email]
+        else:
+            recipients = [getattr(settings, 'DEFAULT_FROM_EMAIL', 'brandon.follah@saintjeaningenieur.org')]
+
+    titre_audit = audit.titre or f"Audit {audit.get_type_display()} - {audit.cible.valeur}"
+    subject = f"[SecEval AI] Notification d'audit terminé : {titre_audit}"
+
+    date_crea_str = audit.dateCreation.strftime('%d/%m/%Y %H:%M') if audit.dateCreation else 'N/A'
+    date_fin_str = audit.dateFin.strftime('%d/%m/%Y %H:%M') if audit.dateFin else timezone.now().strftime('%d/%m/%Y %H:%M')
+    cible_valeur = audit.cible.valeur if audit.cible else 'N/A'
+    cible_type = audit.cible.get_type_display() if audit.cible else 'N/A'
+    type_display = audit.get_type_display() if hasattr(audit, 'get_type_display') else audit.type
+
+    body_text = f"""Bonjour,
+
+L'audit de sécurité SecEval AI est terminé. Retrouvez ci-dessous les informations d'identification et le rapport complet.
+
+--- INFORMATIONS DE L'AUDIT ---
+- ID de l'audit : {audit.id}
+- Titre : {titre_audit}
+- Cible : {cible_valeur} ({cible_type})
+- Type d'audit : {type_display}
+- Score de sécurité : {audit.scoreSecurite}/100
+- Statut : {audit.get_statut_display()}
+- Date de création : {date_crea_str}
+- Date de fin : {date_fin_str}
+- Destinataires : {', '.join(recipients)}
+
+Le rapport d'évaluation est joint à ce courrier électronique.
+
+Cordialement,
+L'équipe SecEval AI
+"""
+
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=body_text,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'brandon.follah@saintjeaningenieur.org'),
+            to=recipients
+        )
+        if filepath and os.path.exists(filepath):
+            email.attach_file(filepath)
+        email.send(fail_silently=True)
+    except Exception as e:
+        print(f"Erreur lors de l'envoi du mail de notification d'audit: {e}")
+
+    destinataire_user = audit.lancePar or Utilisateur.objects.first()
+    if destinataire_user:
+        try:
+            Notification.objects.create(
+                audit=audit,
+                destinataire=destinataire_user,
+                canal=CanalNotification.EMAIL,
+                sujet=subject,
+                message=f"Rapport d'audit '{titre_audit}' envoyé à : {', '.join(recipients)}. Score : {audit.scoreSecurite}/100.",
+                statut="ENVOYE",
+                dateEnvoi=timezone.now()
+            )
+        except Exception as e:
+            print(f"Erreur lors de la création de la notification: {e}")
+
+
 @csrf_exempt
 def audit_callback_n8n_view(request, audit_id):
     """
@@ -424,6 +513,8 @@ def audit_callback_n8n_view(request, audit_id):
         latest_exec.save()
 
         # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
+        new_rapport = None
+        filepath = None
         if rapport_text:
             from reports.models import Rapport, FormatRapport, StatutRapport
             dir_path = os.path.join(settings.BASE_DIR, 'media', 'reports')
@@ -457,6 +548,9 @@ hr {{ border-color: #334155; }}
                 f.write(html_content)
             new_rapport.cheminFichier = filepath
             new_rapport.save(update_fields=['cheminFichier'])
+
+        # Envoi automatique de notification par email avec rapport
+        send_audit_completion_notifications(audit, new_rapport, filepath)
 
 
         # Enregistrer l'activité dans le journal

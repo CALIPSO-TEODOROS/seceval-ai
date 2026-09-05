@@ -583,34 +583,16 @@
             <div id="tab-notifs" class="tab-pane">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Envoyer une Notification de Sécurité (`Notification.envoyer()`)</h3>
+                        <h3 class="card-title">Envoi de Notifications de Sécurité Automatisé</h3>
                     </div>
-                    <form onsubmit="handleCreateNotification(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Destinataire (`Utilisateur`)</label>
-                                <select id="notif-user-select" class="form-control" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Canal d'Envoi (`CanalNotification`)</label>
-                                <select id="notif-canal-select" class="form-control">
-                                    <option value="EMAIL">Email</option>
-                                    <option value="SLACK">Webhook Slack</option>
-                                    <option value="TELEGRAM">Bot Telegram</option>
-                                    <option value="DISCORD">Webhook Discord</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Sujet / Titre de l'Alerte</label>
-                            <input type="text" id="notif-sujet" class="form-control" placeholder="ex: [ALERT] Injection SQL Détectée" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Message de la Notification</label>
-                            <input type="text" id="notif-message" class="form-control" placeholder="Détails de l'alerte ou résultats d'audit" required>
-                        </div>
-                        <button type="submit" class="btn">Envoyer la Notification</button>
-                    </form>
+                    <div style="padding: 10px 0; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                        <p style="margin-top: 0;">
+                            L'envoi manuel de notifications est <strong>désactivé</strong>. 
+                        </p>
+                        <p style="margin-bottom: 0;">
+                            Les notifications d'audit sont envoyées <strong>automatiquement par email</strong> à la fin de chaque audit de sécurité (via callback n8n), avec le rapport d'évaluation complet (fichier PDF/HTML) en pièce jointe ainsi que l'ensemble des informations d'identification de l'audit (ID, Titre, Cible, Type, Score et Dates). L'adresse d'expédition configurée est <code>brandon.follah@saintjeaningenieur.org</code> et les destinataires sont définis lors de la création de l'audit.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -928,6 +910,14 @@
                             </div>
                         </div>
 
+
+                        <div class="form-group">
+                            <label>Adresses Email de Notification (séparées par des virgules)</label>
+                            <input type="text" id="audit-emails-notif" class="form-control" placeholder="ex: brandon.follah@saintjeaningenieur.org, sec-team@company.org">
+                            <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 4px;">
+                                Le rapport complet PDF/HTML et les détails d'audit y seront automatiquement envoyés par email à la fin de l'audit.
+                            </small>
+                        </div>
 
                         <div class="form-group">
                             <label>Description du Contexte & Objectifs Métiers (Transmis au Trigger n8n)</label>
@@ -1738,11 +1728,12 @@
             const heureExecution = document.getElementById('audit-heure').value;
             const webhookN8nUrl = document.getElementById('audit-n8n-webhook').value;
             const contexte = document.getElementById('audit-contexte').value;
+            const emailsNotification = document.getElementById('audit-emails-notif') ? document.getElementById('audit-emails-notif').value : '';
 
             const res = await fetch('/api/audits/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titre, type, projet_id, cible_id, typePlanification, frequence, heureExecution, webhookN8nUrl, contexte })
+                body: JSON.stringify({ titre, type, projet_id, cible_id, typePlanification, frequence, heureExecution, webhookN8nUrl, contexte, emailsNotification })
             });
 
             const data = await res.json();

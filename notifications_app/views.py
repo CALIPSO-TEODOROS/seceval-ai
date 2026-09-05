@@ -37,54 +37,9 @@ def notifications_list_create_view(request):
         return json_response({'notifications': notifs_data, 'total': len(notifs_data)})
 
     elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            destinataire_id = data.get('destinataire_id')
-            sujet = data.get('sujet')
-            message = data.get('message')
-            canal = data.get('canal', CanalNotification.EMAIL)
-            audit_id = data.get('audit_id')
-
-            if not destinataire_id or not sujet or not message:
-                return json_response({'error': 'Champs destinataire_id, sujet et message obligatoires.'}, status=400)
-
-            destinataire = Utilisateur.objects.get(id=destinataire_id)
-            audit = Audit.objects.get(id=audit_id) if audit_id else None
-
-            notif = Notification.objects.create(
-                destinataire=destinataire,
-                audit=audit,
-                canal=canal,
-                sujet=sujet,
-                message=message,
-                statut="EN_ATTENTE"
-            )
-
-            # Auto-envoyer
-            notif.envoyer()
-
-            JournalActivite.enregistrer_depuis_requete(
-                request,
-                action="ENVOI_NOTIFICATION",
-                ressource=destinataire.email,
-                details=f"Notification [{notif.canal}] '{notif.sujet}' envoyée à {destinataire.email}.",
-                audit=audit
-            )
-
-            return json_response({
-                'message': 'Notification créée et envoyée avec succès.',
-                'notification': {
-                    'id': str(notif.id),
-                    'sujet': notif.sujet,
-                    'canal': notif.canal,
-                    'statut': notif.statut,
-                    'dateEnvoi': notif.dateEnvoi.isoformat() if notif.dateEnvoi else None
-                }
-            }, status=201)
-        except Utilisateur.DoesNotExist:
-            return json_response({'error': 'Destinataire introuvable.'}, status=404)
-        except Exception as e:
-            return json_response({'error': str(e)}, status=400)
+        return json_response({
+            'error': "L'envoi manuel de notifications est désactivé. Les notifications d'audit sont envoyées automatiquement à la fin de chaque audit avec le rapport en pièce jointe."
+        }, status=403)
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
