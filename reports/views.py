@@ -15,7 +15,7 @@ def reports_list_create_view(request):
     """GET: List reports. POST: Create a new report draft."""
     if request.method == 'GET':
         audit_id = request.GET.get('audit_id')
-        queryset = Rapport.objects.select_related('audit', 'audit__cible').all().order_by('audit__titre', '-dateGeneration')
+        queryset = Rapport.objects.select_related('audit', 'audit__cible').all().order_by('-dateGeneration')
         if audit_id:
             queryset = queryset.filter(audit_id=audit_id)
 

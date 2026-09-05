@@ -15,7 +15,7 @@ def vulns_list_create_view(request):
     """GET: List vulnerabilities (optional filter audit_id). POST: Create vulnerability."""
     if request.method == 'GET':
         audit_id = request.GET.get('audit_id')
-        queryset = Vulnerabilite.objects.select_related('audit', 'audit__cible', 'audit__projet').all()
+        queryset = Vulnerabilite.objects.select_related('audit', 'audit__cible', 'audit__projet').all().order_by('-dateDetection')
         if audit_id:
             queryset = queryset.filter(audit_id=audit_id)
 

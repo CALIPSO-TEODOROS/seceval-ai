@@ -197,7 +197,7 @@ def users_list_view(request):
     if request.method != 'GET':
         return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
-    users = Utilisateur.objects.all()
+    users = Utilisateur.objects.all().order_by('-dateCreation')
     user_list = []
     for user in users:
         user_list.append({
@@ -311,7 +311,7 @@ def roles_list_view(request):
 def members_list_view(request):
     """GET: Liste des membres de projet. POST: Affecter un utilisateur comme membre."""
     if request.method == 'GET':
-        members = MembreProjet.objects.select_related('utilisateur').all()
+        members = MembreProjet.objects.select_related('utilisateur').all().order_by('-dateAffectation')
         members_data = []
         for m in members:
             members_data.append({

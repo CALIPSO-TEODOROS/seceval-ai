@@ -24,7 +24,7 @@ def json_response(data, status=200):
 def projects_list_create_view(request):
     """GET: List all projects. POST: Create a new project (creer())."""
     if request.method == 'GET':
-        projects = Projet.objects.all()
+        projects = Projet.objects.all().order_by('-dateCreation')
         projects_data = []
         for p in projects:
             projects_data.append({
@@ -199,7 +199,7 @@ def project_cibles_view(request, project_id):
         return json_response({'error': 'Projet non trouvé.'}, status=404)
 
     if request.method == 'GET':
-        cibles = project.cibles.all()
+        cibles = project.cibles.all().order_by('-dateAjout')
         cibles_data = []
         for c in cibles:
             cibles_data.append({

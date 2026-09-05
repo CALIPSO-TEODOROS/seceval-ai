@@ -19,7 +19,7 @@ def logs_list_create_view(request):
         project_id = request.GET.get('projet_id')
         audit_id = request.GET.get('audit_id')
 
-        queryset = JournalActivite.objects.select_related('utilisateur', 'projet', 'audit').all()
+        queryset = JournalActivite.objects.select_related('utilisateur', 'projet', 'audit').all().order_by('-dateAction')
         if user_id:
             queryset = queryset.filter(utilisateur_id=user_id)
         if project_id:

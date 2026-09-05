@@ -16,7 +16,7 @@ def notifications_list_create_view(request):
     """GET: List notifications. POST: Create and optionally send a notification."""
     if request.method == 'GET':
         destinataire_id = request.GET.get('destinataire_id')
-        queryset = Notification.objects.select_related('destinataire', 'audit').all()
+        queryset = Notification.objects.select_related('destinataire', 'audit').all().order_by('-dateCreation')
         if destinataire_id:
             queryset = queryset.filter(destinataire_id=destinataire_id)
 

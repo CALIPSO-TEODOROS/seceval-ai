@@ -24,7 +24,7 @@ def json_response(data, status=200):
 def audits_list_create_view(request):
     """GET: List all audits. POST: Create a new audit."""
     if request.method == 'GET':
-        audits = Audit.objects.select_related('projet', 'cible', 'lancePar').all()
+        audits = Audit.objects.select_related('projet', 'cible', 'lancePar').all().order_by('-dateCreation')
         audits_data = []
         for a in audits:
             audits_data.append({
