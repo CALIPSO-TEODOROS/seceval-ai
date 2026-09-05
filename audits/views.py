@@ -1,7 +1,9 @@
 import json
+import os
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.conf import settings
 from .models import (
     Audit,
     PlanAudit,
@@ -377,14 +379,37 @@ def audit_callback_n8n_view(request, audit_id):
         # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
         if rapport_text:
             from reports.models import Rapport, FormatRapport, StatutRapport
-            Rapport.objects.create(
+            dir_path = os.path.join(settings.BASE_DIR, 'media', 'reports')
+            os.makedirs(dir_path, exist_ok=True)
+            new_rapport = Rapport.objects.create(
                 titre=f"Rapport Automatise n8n - {audit.titre or audit.cible.valeur}",
                 audit=audit,
                 format=FormatRapport.HTML,
                 statut=StatutRapport.PUBLIE,
-                cheminFichier=rapport_text[:255],
                 scoreFinal=audit.scoreSecurite
             )
+            filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.html"
+            filepath = os.path.join(dir_path, filename)
+            html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{new_rapport.titre}</title>
+<style>
+body {{ font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; background: #0f172a; color: #f8fafc; }}
+pre {{ background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; }}
+h1, h2, h3 {{ color: #38bdf8; }}
+hr {{ border-color: #334155; }}
+</style>
+</head>
+<body>
+<div>{rapport_text.replace('\n', '<br>')}</div>
+</body>
+</html>"""
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            new_rapport.cheminFichier = filepath
+            new_rapport.save(update_fields=['cheminFichier'])
 
 
         # Enregistrer l'activité dans le journal
