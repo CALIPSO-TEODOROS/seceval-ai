@@ -502,11 +502,27 @@
                 grid-template-columns: 1fr;
             }
 
-            .header {
-                padding: 0 12px;
-            }
+        /* Pagination Toolbar Styles */
+        .pagination-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+            height: auto;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -1468,6 +1484,105 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script>
+
+        // ==================== PAGINATION HELPER SYSTEM ====================
+        const tablePages = {};
+
+        function renderPaginatedTable(config) {
+            const {
+                tableBodyId,
+                items = [],
+                renderRowFn,
+                pageSize = 10,
+                emptyMessage = 'Aucun élément disponible.'
+            } = config;
+
+            const tbody = document.getElementById(tableBodyId);
+            if (!tbody) return;
+
+            const table = tbody.closest('table');
+            if (!tablePages[tableBodyId]) {
+                tablePages[tableBodyId] = 1;
+            }
+
+            const totalItems = items.length;
+            if (totalItems === 0) {
+                tbody.innerHTML = typeof emptyMessage === 'string' && emptyMessage.trim().startsWith('<tr')
+                    ? emptyMessage
+                    : `<tr><td colspan="100" style="text-align:center; color:var(--text-muted);">${emptyMessage}</td></tr>`;
+                removePaginationControls(table);
+                return;
+            }
+
+            const totalPages = Math.ceil(totalItems / pageSize) || 1;
+            if (tablePages[tableBodyId] > totalPages) {
+                tablePages[tableBodyId] = totalPages;
+            }
+            if (tablePages[tableBodyId] < 1) {
+                tablePages[tableBodyId] = 1;
+            }
+
+            const currentPage = tablePages[tableBodyId];
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalItems);
+            const pageItems = items.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageItems.map((item, index) => renderRowFn(item, startIndex + index)).join('');
+
+            renderPaginationControls(table, tableBodyId, currentPage, totalPages, totalItems, startIndex, endIndex, (newPage) => {
+                tablePages[tableBodyId] = newPage;
+                renderPaginatedTable(config);
+            });
+        }
+
+        function removePaginationControls(table) {
+            if (!table) return;
+            const existing = table.nextElementSibling;
+            if (existing && existing.classList.contains('pagination-toolbar')) {
+                existing.remove();
+            }
+        }
+
+        function renderPaginationControls(table, tableBodyId, currentPage, totalPages, totalItems, startIndex, endIndex, onPageChange) {
+            if (!table) return;
+            let toolbar = table.nextElementSibling;
+            if (!toolbar || !toolbar.classList.contains('pagination-toolbar')) {
+                toolbar = document.createElement('div');
+                toolbar.className = 'pagination-toolbar';
+                table.parentNode.insertBefore(toolbar, table.nextSibling);
+            }
+
+            if (totalPages <= 1) {
+                toolbar.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">Affichage de 1 à ${totalItems} sur ${totalItems} éléments</span>`;
+                return;
+            }
+
+            toolbar.innerHTML = `
+                <span style="font-size:12px; color:var(--text-muted);">Affichage de ${startIndex + 1} à ${endIndex} sur ${totalItems} éléments (Page ${currentPage} / ${totalPages})</span>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-sm" ${currentPage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} id="prev-${tableBodyId}">◀ Précédent</button>
+                    <button class="btn btn-sm" ${currentPage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} id="next-${tableBodyId}">Suivant ▶</button>
+                </div>
+            `;
+
+            const prevBtn = toolbar.querySelector(`#prev-${tableBodyId}`);
+            const nextBtn = toolbar.querySelector(`#next-${tableBodyId}`);
+
+            if (prevBtn && currentPage > 1) {
+                prevBtn.onclick = (e) => {
+                    e.preventDefault();
+                    onPageChange(currentPage - 1);
+                };
+            }
+            if (nextBtn && currentPage < totalPages) {
+                nextBtn.onclick = (e) => {
+                    e.preventDefault();
+                    onPageChange(currentPage + 1);
+                };
+            }
+        }
+        // ==================================================================
+
         let currentUser = null;
 
         function applyTheme(theme) {
@@ -1678,22 +1793,24 @@
             try {
                 const res = await fetch('/api/logs/');
                 const data = await res.json();
-
-                const tbody = document.getElementById('logs-table-body');
-                if (!tbody) return;
-                tbody.innerHTML = '';
-                data.logs.forEach(l => {
-                    const userName = (l.utilisateur && l.utilisateur.nom) ? l.utilisateur.nom : (typeof l.utilisateur === 'string' ? l.utilisateur : 'Système');
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${new Date(l.dateAction).toLocaleString()}</td>
-                            <td><strong>${userName}</strong></td>
-                            <td><span class="badge badge-INVITE">${l.action}</span></td>
-                            <td>${l.ressource}</td>
-                            <td><code>${l.adresseIP}</code></td>
-                            <td><small style="color:var(--text-muted);">${l.details || '-'}</small></td>
-                        </tr>
-                    `;
+                renderPaginatedTable({
+                    tableBodyId: 'logs-table-body',
+                    items: data.logs || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun journal d\'activité disponible.',
+                    renderRowFn: (l) => {
+                        const userName = (l.utilisateur && l.utilisateur.nom) ? l.utilisateur.nom : (typeof l.utilisateur === 'string' ? l.utilisateur : 'Système');
+                        return `
+                            <tr>
+                                <td>${new Date(l.dateAction).toLocaleString()}</td>
+                                <td><strong>${userName}</strong></td>
+                                <td><span class="badge badge-INVITE">${l.action}</span></td>
+                                <td>${l.ressource}</td>
+                                <td><code>${l.adresseIP}</code></td>
+                                <td><small style="color:var(--text-muted);">${l.details || '-'}</small></td>
+                            </tr>
+                        `;
+                    }
                 });
             } catch (e) { console.error(e); }
         }
@@ -1723,23 +1840,25 @@
             try {
                 const res = await fetch('/api/notifications/');
                 const data = await res.json();
-
-                const tbody = document.getElementById('notifs-table-body');
-                if (!tbody) return;
-                tbody.innerHTML = '';
-                data.notifications.forEach(n => {
-                    const destNom = (n.destinataire && n.destinataire.nom) ? n.destinataire.nom : (typeof n.destinataire === 'string' ? n.destinataire : 'Système');
-                    const destEmail = (n.destinataire && n.destinataire.email) ? `(${n.destinataire.email})` : '';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><span class="badge badge-INVITE">${n.canal}</span></td>
-                            <td><strong>${destNom}</strong> ${destEmail}</td>
-                            <td><strong>${n.sujet}</strong></td>
-                            <td><span class="badge badge-${n.statut}">${n.statut}</span></td>
-                            <td>${n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : 'En attente'}</td>
-                            <td><button class="btn" style="padding: 4px 10px;" onclick="resendNotification('${n.id}')">Renvoyer</button></td>
-                        </tr>
-                    `;
+                renderPaginatedTable({
+                    tableBodyId: 'notifs-table-body',
+                    items: data.notifications || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucune notification disponible.',
+                    renderRowFn: (n) => {
+                        const destNom = (n.destinataire && n.destinataire.nom) ? n.destinataire.nom : (typeof n.destinataire === 'string' ? n.destinataire : 'Système');
+                        const destEmail = (n.destinataire && n.destinataire.email) ? `(${n.destinataire.email})` : '';
+                        return `
+                            <tr>
+                                <td><span class="badge badge-INVITE">${n.canal}</span></td>
+                                <td><strong>${destNom}</strong> ${destEmail}</td>
+                                <td><strong>${n.sujet}</strong></td>
+                                <td><span class="badge badge-${n.statut}">${n.statut}</span></td>
+                                <td>${n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : 'En attente'}</td>
+                                <td><button class="btn" style="padding: 4px 10px;" onclick="resendNotification('${n.id}')">Renvoyer</button></td>
+                            </tr>
+                        `;
+                    }
                 });
             } catch (e) { console.error(e); }
         }
@@ -1774,28 +1893,32 @@
                 const res = await fetch('/api/reports/');
                 const data = await res.json();
 
-                const tbody = document.getElementById('reports-table-body');
-                tbody.innerHTML = '';
-                data.rapports.forEach(r => {
-                    const auditTitre = (r.audit && r.audit.titre) ? r.audit.titre : ((r.audit && r.audit.type && r.audit.cible) ? `Audit ${r.audit.type} - ${r.audit.cible}` : 'Audit de Sécurité');
-                    const dateFormatted = r.date_display || (new Date(r.dateGeneration).toLocaleString());
-                    const scoreColor = r.scoreFinal >= 80 ? '#10b981' : (r.scoreFinal >= 50 ? '#f59e0b' : '#ef4444');
-                    const readUrl = r.read_url || `/api/audits/${r.audit.id}/rapport-page/`;
-                    const downloadUrl = r.download_url || `/api/reports/${r.id}/telecharger/?download=1`;
+                renderPaginatedTable({
+                    tableBodyId: 'reports-table-body',
+                    items: data.rapports || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun rapport disponible.',
+                    renderRowFn: (r) => {
+                        const auditTitre = (r.audit && r.audit.titre) ? r.audit.titre : ((r.audit && r.audit.type && r.audit.cible) ? `Audit ${r.audit.type} - ${r.audit.cible}` : 'Audit de Sécurité');
+                        const dateFormatted = r.date_display || (new Date(r.dateGeneration).toLocaleString());
+                        const scoreColor = r.scoreFinal >= 80 ? '#10b981' : (r.scoreFinal >= 50 ? '#f59e0b' : '#ef4444');
+                        const readUrl = r.read_url || `/api/audits/${r.audit ? r.audit.id : ''}/rapport-page/`;
+                        const downloadUrl = r.download_url || `/api/reports/${r.id}/telecharger/?download=1`;
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${auditTitre}</strong></td>
-                            <td><small style="color:var(--text-muted);">${dateFormatted}</small></td>
-                            <td>${r.titre}</td>
-                            <td><strong style="color: ${scoreColor};">${r.scoreFinal}/100</strong></td>
-                            <td><span class="badge badge-INVITE">${r.format}</span></td>
-                            <td>
-                                <a href="${readUrl}" target="_blank" class="btn" style="padding: 4px 10px; text-decoration:none; margin-right: 4px;">👁️ Lire</a>
-                                <a href="${downloadUrl}" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">📥 Télécharger</a>
-                            </td>
-                        </tr>
-                    `;
+                        return `
+                            <tr>
+                                <td><strong>${auditTitre}</strong></td>
+                                <td><small style="color:var(--text-muted);">${dateFormatted}</small></td>
+                                <td>${r.titre}</td>
+                                <td><strong style="color: ${scoreColor};">${r.scoreFinal}/100</strong></td>
+                                <td><span class="badge badge-INVITE">${r.format}</span></td>
+                                <td>
+                                    <a href="${readUrl}" target="_blank" class="btn" style="padding: 4px 10px; text-decoration:none; margin-right: 4px;">👁️ Lire</a>
+                                    <a href="${downloadUrl}" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">📥 Télécharger</a>
+                                </td>
+                            </tr>
+                        `;
+                    }
                 });
             } catch (e) { console.error(e); }
         }
@@ -1833,25 +1956,29 @@
             try {
                 const res = await fetch('/api/vulns/');
                 const data = await res.json();
-
-                const tbody = document.getElementById('vulns-table-body');
-                tbody.innerHTML = '';
-                data.vulnerabilites.forEach(v => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><span class="badge badge-${v.gravite}">${v.gravite}</span></td>
-                            <td><strong>${v.titre}</strong> <br><small style="color:var(--text-muted);">${v.codeCWE || ''}</small></td>
-                            <td><strong>${v.scoreCVSS}/10</strong></td>
-                            <td>${v.audit.cible}</td>
-                            <td><span class="badge badge-${v.statut}">${v.statut_display}</span></td>
-                            <td>
-                                <button class="btn" style="padding: 4px 10px;" onclick="confirmerVuln('${v.id}')">Confirmer</button>
-                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="corrigeeVuln('${v.id}')">Corrigée</button>
-                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="fauxPositifVuln('${v.id}')">Faux Positif</button>
-                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="inspectVuln('${v.id}')">PoC / Patch</button>
-                            </td>
-                        </tr>
-                    `;
+                renderPaginatedTable({
+                    tableBodyId: 'vulns-table-body',
+                    items: data.vulnerabilites || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucune vulnérabilité trouvée.',
+                    renderRowFn: (v) => {
+                        const targetVal = (v.audit && v.audit.cible) ? v.audit.cible : '-';
+                        return `
+                            <tr>
+                                <td><span class="badge badge-${v.gravite}">${v.gravite}</span></td>
+                                <td><strong>${v.titre}</strong> <br><small style="color:var(--text-muted);">${v.codeCWE || ''}</small></td>
+                                <td><strong>${v.scoreCVSS}/10</strong></td>
+                                <td>${targetVal}</td>
+                                <td><span class="badge badge-${v.statut}">${v.statut_display}</span></td>
+                                <td>
+                                    <button class="btn" style="padding: 4px 10px;" onclick="confirmerVuln('${v.id}')">Confirmer</button>
+                                    <button class="btn btn-outline" style="padding: 4px 10px;" onclick="corrigeeVuln('${v.id}')">Corrigée</button>
+                                    <button class="btn btn-outline" style="padding: 4px 10px;" onclick="fauxPositifVuln('${v.id}')">Faux Positif</button>
+                                    <button class="btn btn-outline" style="padding: 4px 10px;" onclick="inspectVuln('${v.id}')">PoC / Patch</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
                 });
             } catch (e) { console.error(e); }
         }
@@ -1928,6 +2055,9 @@
                 techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d\'évaluation</td></tr>';
                 servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d\'évaluation</td></tr>';
                 sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d\'évaluation</td></tr>';
+                removePaginationControls(techTbody.closest('table'));
+                removePaginationControls(servicesTbody.closest('table'));
+                removePaginationControls(sslTbody.closest('table'));
                 return;
             }
 
@@ -1940,28 +2070,30 @@
                 const data = await res.json();
 
                 // 1. Technologies
-                techTbody.innerHTML = '';
-                if (data.technologies && data.technologies.length > 0) {
-                    data.technologies.forEach(t => {
-                        techTbody.innerHTML += `
-                            <tr>
-                                <td><strong>${t.nom}</strong></td>
-                                <td><code>${t.version || 'Inconnue'}</code></td>
-                                <td><span class="badge badge-INVITE">${t.categorie || 'Stack'}</span></td>
-                                <td><strong>${t.niveauConfiance}%</strong></td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucune technologie détectée. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
-                }
+                renderPaginatedTable({
+                    tableBodyId: 'recon-tech-tbody',
+                    items: data.technologies || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucune technologie détectée. Cliquez sur "Lancer l\'Empreinte Automatique".',
+                    renderRowFn: (t) => `
+                        <tr>
+                            <td><strong>${t.nom}</strong></td>
+                            <td><code>${t.version || 'Inconnue'}</code></td>
+                            <td><span class="badge badge-INVITE">${t.categorie || 'Stack'}</span></td>
+                            <td><strong>${t.niveauConfiance}%</strong></td>
+                        </tr>
+                    `
+                });
 
                 // 2. Services & Ports
-                servicesTbody.innerHTML = '';
-                if (data.services && data.services.length > 0) {
-                    data.services.forEach(s => {
+                renderPaginatedTable({
+                    tableBodyId: 'recon-services-tbody',
+                    items: data.services || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun service/port scanné. Cliquez sur "Lancer l\'Empreinte Automatique".',
+                    renderRowFn: (s) => {
                         const statusBadge = s.etat === 'open' ? 'badge-ACTIF' : 'badge-SUSPENDU';
-                        servicesTbody.innerHTML += `
+                        return `
                             <tr>
                                 <td><strong>${s.port}/${s.protocole}</strong></td>
                                 <td><span class="badge badge-INVITE">${s.service}</span></td>
@@ -1969,19 +2101,20 @@
                                 <td><span class="badge ${statusBadge}">${s.etat}</span></td>
                             </tr>
                         `;
-                    });
-                } else {
-                    servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun service/port scanné. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
-                }
+                    }
+                });
 
                 // 3. Certificats SSL/TLS
-                sslTbody.innerHTML = '';
-                if (data.certificats_ssl && data.certificats_ssl.length > 0) {
-                    data.certificats_ssl.forEach(c => {
+                renderPaginatedTable({
+                    tableBodyId: 'recon-ssl-tbody',
+                    items: data.certificats_ssl || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun certificat SSL enregistré. Cliquez sur "Lancer l\'Empreinte Automatique".',
+                    renderRowFn: (c) => {
                         const dateStart = c.dateDebut ? new Date(c.dateDebut).toLocaleDateString() : '-';
                         const dateEnd = c.dateExpiration ? new Date(c.dateExpiration).toLocaleDateString() : '-';
                         const validBadge = c.valide ? '<span class="badge badge-ACTIF">VALIDE</span>' : '<span class="badge badge-DESACTIVE">EXPIRÉ</span>';
-                        sslTbody.innerHTML += `
+                        return `
                             <tr>
                                 <td><strong>${c.sujet}</strong></td>
                                 <td>${c.emetteur}</td>
@@ -1991,10 +2124,8 @@
                                 <td>${validBadge}</td>
                             </tr>
                         `;
-                    });
-                } else {
-                    sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Aucun certificat SSL enregistré. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
-                }
+                    }
+                });
 
             } catch (e) {
                 console.error(e);
@@ -2039,64 +2170,68 @@
                 const reconSelect = document.getElementById('recon-audit-select');
                 if (reconSelect) reconSelect.innerHTML = '<option value="">-- Choisir un audit --</option>';
 
-                data.audits.forEach(a => {
+                (data.audits || []).forEach(a => {
                     const cibleVal = (a.cible && a.cible.valeur) ? a.cible.valeur : '';
                     if (reportAuditSelect) reportAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal}</option>`;
                     if (vulnAuditSelect) vulnAuditSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal}</option>`;
                     if (reconSelect) reconSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal} [${a.statut_display}]</option>`;
                 });
 
-                const tbody = document.getElementById('audits-table-body');
-                tbody.innerHTML = '';
-                data.audits.forEach(a => {
-                    let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
-                    actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">📊 Résultats N8N</button>`;
-                    actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">📜 Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
+                renderPaginatedTable({
+                    tableBodyId: 'audits-table-body',
+                    items: data.audits || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun audit planifié ou exécuté.',
+                    renderRowFn: (a) => {
+                        let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
+                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">📊 Résultats N8N</button>`;
+                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">📜 Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
 
+                        if (a.statut === 'EN_COURS') {
+                            actionsHtml += `
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="pauseAudit('${a.id}')">Pause</button>
+                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="terminerAudit('${a.id}')">Terminer</button>
+                                <button class="btn btn-danger" style="padding: 4px 10px;" onclick="arreterAudit('${a.id}')">Arrêter</button>
+                            `;
+                        }
+                        actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px;" onclick="viewAuditPlan('${a.id}')">Voir Plan</button>`;
 
-                    if (a.statut === 'EN_COURS') {
-                        actionsHtml += `
-                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="pauseAudit('${a.id}')">Pause</button>
-                            <button class="btn btn-outline" style="padding: 4px 10px;" onclick="terminerAudit('${a.id}')">Terminer</button>
-                            <button class="btn btn-danger" style="padding: 4px 10px;" onclick="arreterAudit('${a.id}')">Arrêter</button>
+                        const planifBadge = a.typePlanification === 'REPETITIVE'
+                            ? `<span class="badge badge-EN_COURS">Répétitive (${a.frequence_display})</span>`
+                            : `<span class="badge badge-FAIBLE">Unique</span>`;
+
+                        const heureBadge = a.heureExecution ? `<br><small style="color:var(--accent); font-weight:600;">Heure: ${a.heureExecution}</small>` : '';
+                        const webhookBadge = a.webhookN8nUrl ? `<br><span class="badge badge-INVITE" title="${a.webhookN8nUrl}">⚡ n8n Webhook</span>` : '';
+                        const lastLaunchText = a.dateDernierLancement ? new Date(a.dateDernierLancement).toLocaleString() : 'Jamais lancé';
+
+                        const targetVal = (a.cible && a.cible.valeur) ? a.cible.valeur : '-';
+                        const projNom = (a.projet && a.projet.nom) ? a.projet.nom : '-';
+
+                        return `
+                            <tr>
+                                <td>
+                                    <strong>${a.titre}</strong>
+                                    ${a.contexte ? `<br><small style="color:var(--text-muted);">${a.contexte}</small>` : ''}
+                                    <br><small style="color:var(--text-secondary); font-weight:600;">Dernier Lancement: ${lastLaunchText}</small>
+                                </td>
+                                <td>
+                                    <strong>${a.type_display}</strong><br>
+                                    ${planifBadge}${heureBadge}${webhookBadge}
+                                </td>
+                                <td>
+                                    <strong>${targetVal}</strong><br>
+                                    <small style="color:var(--text-muted);">${projNom}</small>
+                                </td>
+                                <td><span class="badge badge-${a.statut}">${a.statut_display}</span></td>
+                                <td><div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div></td>
+                                <td><strong>${a.scoreSecurite}/100</strong></td>
+                                <td>${actionsHtml}</td>
+                            </tr>
                         `;
                     }
-                    actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px;" onclick="viewAuditPlan('${a.id}')">Voir Plan</button>`;
-
-
-                    const planifBadge = a.typePlanification === 'REPETITIVE'
-                        ? `<span class="badge badge-EN_COURS">Répétitive (${a.frequence_display})</span>`
-                        : `<span class="badge badge-FAIBLE">Unique</span>`;
-
-                    const heureBadge = a.heureExecution ? `<br><small style="color:var(--accent); font-weight:600;">Heure: ${a.heureExecution}</small>` : '';
-                    const webhookBadge = a.webhookN8nUrl ? `<br><span class="badge badge-INVITE" title="${a.webhookN8nUrl}">⚡ n8n Webhook</span>` : '';
-                    const lastLaunchText = a.dateDernierLancement ? new Date(a.dateDernierLancement).toLocaleString() : 'Jamais lancé';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>
-                                <strong>${a.titre}</strong>
-                                ${a.contexte ? `<br><small style="color:var(--text-muted);">${a.contexte}</small>` : ''}
-                                <br><small style="color:var(--text-secondary); font-weight:600;">Dernier Lancement: ${lastLaunchText}</small>
-                            </td>
-                            <td>
-                                <strong>${a.type_display}</strong><br>
-                                ${planifBadge}${heureBadge}${webhookBadge}
-                            </td>
-                            <td>
-                                <strong>${a.cible.valeur}</strong><br>
-                                <small style="color:var(--text-muted);">${a.projet.nom}</small>
-                            </td>
-                            <td><span class="badge badge-${a.statut}">${a.statut_display}</span></td>
-                            <td><div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div></td>
-                            <td><strong>${a.scoreSecurite}/100</strong></td>
-                            <td>${actionsHtml}</td>
-                        </tr>
-                    `;
                 });
 
-
-                if (data.audits.length > 0 && !reconSelect.value) {
+                if (data.audits && data.audits.length > 0 && reconSelect && !reconSelect.value) {
                     reconSelect.value = data.audits[0].id;
                     loadReconForSelectedAudit();
                 }
@@ -2205,21 +2340,17 @@
                 const res = await fetch('/api/projects/');
                 const data = await res.json();
 
-                const projectsTbody = document.getElementById('projects-table-body');
                 const projSelect = document.getElementById('cible-proj-select');
                 const auditProjSelect = document.getElementById('audit-proj-select');
                 const memberProjSelect = document.getElementById('assign-member-project');
                 const authCibleSelect = document.getElementById('auth-cible-select');
 
-                if (projectsTbody) projectsTbody.innerHTML = '';
                 if (projSelect) projSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
                 if (auditProjSelect) auditProjSelect.innerHTML = '<option value="">-- Choisir un projet --</option>';
                 if (memberProjSelect) memberProjSelect.innerHTML = '<option value="">-- (Optionnel) Sélectionner un projet --</option>';
                 if (authCibleSelect) authCibleSelect.innerHTML = '<option value="">-- Choisir une cible --</option>';
 
-                for (const p of data.projects) {
-                    if (projectsTbody) projectsTbody.innerHTML += `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`;
-
+                for (const p of (data.projects || [])) {
                     if (projSelect) projSelect.innerHTML += `<option value="${p.id}">${p.nom} (${p.organisation})</option>`;
                     if (auditProjSelect) auditProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
                     if (memberProjSelect) memberProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
@@ -2227,11 +2358,19 @@
                     const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
                     if (ciblesRes.ok) {
                         const ciblesData = await ciblesRes.json();
-                        ciblesData.cibles.forEach(c => {
+                        (ciblesData.cibles || []).forEach(c => {
                             if (authCibleSelect) authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
                         });
                     }
                 }
+
+                renderPaginatedTable({
+                    tableBodyId: 'projects-table-body',
+                    items: data.projects || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun projet enregistré.',
+                    renderRowFn: (p) => `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`
+                });
             } catch(e) { console.error(e); }
         }
 
@@ -2326,25 +2465,34 @@
                     });
                 }
 
-                const usersTbody = document.getElementById('users-table-body');
                 const memberSelect = document.getElementById('assign-member-user');
                 const notifUserSelect = document.getElementById('notif-user-select');
                 const logUserSelect = document.getElementById('log-user-select');
 
-                if (usersTbody) usersTbody.innerHTML = '';
                 if (memberSelect) memberSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
                 if (notifUserSelect) notifUserSelect.innerHTML = '<option value="">-- Sélectionner un destinataire --</option>';
                 if (logUserSelect) logUserSelect.innerHTML = '<option value="">-- Sélectionner un utilisateur --</option>';
 
-                data.users.forEach(user => {
-                    let roleOptionsHtml = '<option value="">-- Choisir / Modifier Rôle --</option>';
-                    rolesList.forEach(r => {
-                        const isSelected = user.roles.includes(r.nom);
-                        roleOptionsHtml += `<option value="${r.id}" ${isSelected ? 'selected' : ''}>${r.nom}</option>`;
-                    });
+                const usersList = data.users || [];
+                usersList.forEach(user => {
+                    if (memberSelect) memberSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                    if (notifUserSelect) notifUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                    if (logUserSelect) logUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
+                });
 
-                    if (usersTbody) {
-                        usersTbody.innerHTML += `
+                renderPaginatedTable({
+                    tableBodyId: 'users-table-body',
+                    items: usersList,
+                    pageSize: 10,
+                    emptyMessage: 'Aucun utilisateur enregistré.',
+                    renderRowFn: (user) => {
+                        let roleOptionsHtml = '<option value="">-- Choisir / Modifier Rôle --</option>';
+                        rolesList.forEach(r => {
+                            const isSelected = user.roles.includes(r.nom);
+                            roleOptionsHtml += `<option value="${r.id}" ${isSelected ? 'selected' : ''}>${r.nom}</option>`;
+                        });
+
+                        return `
                             <tr>
                                 <td><strong>${user.nom}</strong></td>
                                 <td>${user.email}</td>
@@ -2368,10 +2516,8 @@
                             </tr>
                         `;
                     }
-                    if (memberSelect) memberSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
-                    if (notifUserSelect) notifUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
-                    if (logUserSelect) logUserSelect.innerHTML += `<option value="${user.id}">${user.nom} (${user.email})</option>`;
                 });
+
             } catch(e) { console.error(e); }
         }
 
@@ -2455,17 +2601,12 @@
         }
 
         function renderPermissionsTable(permissions) {
-            const tbody = document.getElementById('permissions-table-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (!permissions || permissions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Aucune permission système définie.</td></tr>';
-                return;
-            }
-
-            permissions.forEach(p => {
-                tbody.innerHTML += `
+            renderPaginatedTable({
+                tableBodyId: 'permissions-table-body',
+                items: permissions || [],
+                pageSize: 10,
+                emptyMessage: 'Aucune permission système définie.',
+                renderRowFn: (p) => `
                     <tr>
                         <td><code>${p.code}</code></td>
                         <td>${p.description || '-'}</td>
@@ -2473,7 +2614,7 @@
                             <button class="btn-action danger" onclick="handleDeletePermission('${p.id}', '${p.code}')" title="Supprimer la permission">🗑️ Supprimer</button>
                         </td>
                     </tr>
-                `;
+                `
             });
         }
 
@@ -2499,33 +2640,30 @@
         }
 
         function renderRolesTable(roles) {
-            const tbody = document.getElementById('roles-table-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
+            renderPaginatedTable({
+                tableBodyId: 'roles-table-body',
+                items: roles || [],
+                pageSize: 10,
+                emptyMessage: 'Aucun rôle défini.',
+                renderRowFn: (role) => {
+                    const permBadges = (role.permissions && role.permissions.length > 0)
+                        ? role.permissions.map(p => `<span class="badge badge-INVITE" style="margin-right:4px;">${p}</span>`).join('')
+                        : '<span style="color:var(--text-muted); font-size:12px;">Aucune permission</span>';
 
-            if (!roles || roles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun rôle défini.</td></tr>';
-                return;
-            }
+                    const roleJson = JSON.stringify(role).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
 
-            roles.forEach(role => {
-                const permBadges = (role.permissions && role.permissions.length > 0)
-                    ? role.permissions.map(p => `<span class="badge badge-INVITE" style="margin-right:4px;">${p}</span>`).join('')
-                    : '<span style="color:var(--text-muted); font-size:12px;">Aucune permission</span>';
-
-                const roleJson = JSON.stringify(role).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${role.nom}</strong></td>
-                        <td>${role.description || '-'}</td>
-                        <td>${permBadges}</td>
-                        <td>
-                            <button class="btn-action" onclick='editRole(${roleJson})' title="Éditer le rôle">✏️ Éditer</button>
-                            <button class="btn-action danger" onclick="handleDeleteRole('${role.id}', '${role.nom}')" title="Supprimer le rôle">🗑️ Supprimer</button>
-                        </td>
-                    </tr>
-                `;
+                    return `
+                        <tr>
+                            <td><strong>${role.nom}</strong></td>
+                            <td>${role.description || '-'}</td>
+                            <td>${permBadges}</td>
+                            <td>
+                                <button class="btn-action" onclick='editRole(${roleJson})' title="Éditer le rôle">✏️ Éditer</button>
+                                <button class="btn-action danger" onclick="handleDeleteRole('${role.id}', '${role.nom}')" title="Supprimer le rôle">🗑️ Supprimer</button>
+                            </td>
+                        </tr>
+                    `;
+                }
             });
         }
 
@@ -2664,14 +2802,18 @@
         }
 
         async function loadMembers() {
-            const res = await fetch('/api/users/members/');
-            const data = await res.json();
+            try {
+                const res = await fetch('/api/users/members/');
+                const data = await res.json();
 
-            const tbody = document.getElementById('members-table-body');
-            tbody.innerHTML = '';
-            data.members.forEach(member => {
-                tbody.innerHTML += `<tr><td><strong>${member.nom}</strong></td><td>${member.email}</td><td>${new Date(member.dateAffectation).toLocaleString()}</td><td><span class="badge ${member.actif ? 'badge-ACTIF' : 'badge-DESACTIVE'}">${member.actif ? 'Actif' : 'Inactif'}</span></td></tr>`;
-            });
+                renderPaginatedTable({
+                    tableBodyId: 'members-table-body',
+                    items: data.members || [],
+                    pageSize: 10,
+                    emptyMessage: 'Aucun membre affecté.',
+                    renderRowFn: (member) => `<tr><td><strong>${member.nom}</strong></td><td>${member.email}</td><td>${new Date(member.dateAffectation).toLocaleString()}</td><td><span class="badge ${member.actif ? 'badge-ACTIF' : 'badge-DESACTIVE'}">${member.actif ? 'Actif' : 'Inactif'}</span></td></tr>`
+                });
+            } catch(e) { console.error(e); }
         }
 
         async function handleAssignMember(e) {
