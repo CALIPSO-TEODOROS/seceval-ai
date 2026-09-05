@@ -1859,7 +1859,7 @@
                         `;
                     });
                 } else {
-                    techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucune technologie détectée. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                    techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucune technologie détectée. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
                 }
 
                 // 2. Services & Ports
@@ -1877,7 +1877,7 @@
                         `;
                     });
                 } else {
-                    servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun service/port scanné. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                    servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun service/port scanné. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
                 }
 
                 // 3. Certificats SSL/TLS
@@ -1899,7 +1899,7 @@
                         `;
                     });
                 } else {
-                    sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Aucun certificat SSL enregistré. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                    sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Aucun certificat SSL enregistré. Cliquez sur "Lancer l\'Empreinte Automatique".</td></tr>';
                 }
 
             } catch (e) {
@@ -2303,7 +2303,7 @@
                     document.getElementById('new-user-password').value = '';
                     loadUsersData();
                 } else {
-                    showToast(data.error || 'Erreur lors de la création de l'utilisateur.', 'danger');
+                    showToast(data.error || "Erreur lors de la création de l'utilisateur.", 'danger');
                 }
             } catch (err) {
                 console.error(err);
@@ -2329,7 +2329,7 @@
                     body: JSON.stringify({ role_id: roleId })
                 });
                 if (res.ok) {
-                    showToast('Rôle de l'utilisateur mis à jour avec succès');
+                    showToast("Rôle de l'utilisateur mis à jour avec succès");
                     loadUsersData();
                 }
             } catch (err) {
