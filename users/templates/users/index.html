@@ -619,45 +619,31 @@
             <div id="tab-reports" class="tab-pane">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Générer un Nouveau Rapport (`Rapport.generer()`)</h3>
+                        <h3 class="card-title">Rapports d'Évaluation de Sécurité Automatisés</h3>
                     </div>
-                    <form onsubmit="handleCreateReport(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Sélectionner l'Audit d'Évaluation</label>
-                                <select id="report-audit-select" class="form-control" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Titre du Rapport</label>
-                                <input type="text" id="report-titre" class="form-control" placeholder="ex: Rapport d'Audit Pentest Officiel" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Format d'Export (`FormatRapport`)</label>
-                            <select id="report-format-select" class="form-control">
-                                <option value="HTML">Page Web Interactive (HTML)</option>
-                                <option value="JSON">Fichier Structuré (JSON)</option>
-                                <option value="PDF">Document Officiel (PDF)</option>
-                                <option value="CSV">Matrice de Failles (CSV)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn">Générer le Rapport</button>
-                    </form>
+                    <div style="padding: 10px 0; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                        <p style="margin-top: 0;">
+                            La génération manuelle de rapports est <strong>désactivée</strong>. 
+                        </p>
+                        <p style="margin-bottom: 0;">
+                            Les rapports sont les <strong>résultats officiels des audits</strong> de sécurité et sont automatiquement générés lors de la finalisation des audits (ou callback n8n). Ils sont classés ci-dessous par <strong>titre d'audit</strong> et par <strong>date de génération</strong>, et peuvent être consultés en ligne ou téléchargés.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Rapports d'Évaluation de Sécurité Générés</h3>
+                        <h3 class="card-title">Rapports d'Évaluation de Sécurité (Classés par Audit & Date)</h3>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Format</th>
+                                <th>Titre de l'Audit</th>
+                                <th>Date & Heure</th>
                                 <th>Titre du Rapport</th>
-                                <th>Cible</th>
-                                <th>Score Final</th>
-                                <th>Statut</th>
-                                <th>Actions Métier</th>
+                                <th>Score Sécurité</th>
+                                <th>Format</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="reports-table-body"></tbody>
@@ -1487,17 +1473,22 @@
                 const tbody = document.getElementById('reports-table-body');
                 tbody.innerHTML = '';
                 data.rapports.forEach(r => {
+                    const auditTitre = (r.audit && r.audit.titre) ? r.audit.titre : ((r.audit && r.audit.type && r.audit.cible) ? `Audit ${r.audit.type} - ${r.audit.cible}` : 'Audit de Sécurité');
+                    const dateFormatted = r.date_display || (new Date(r.dateGeneration).toLocaleString());
+                    const scoreColor = r.scoreFinal >= 80 ? '#10b981' : (r.scoreFinal >= 50 ? '#f59e0b' : '#ef4444');
+                    const readUrl = r.read_url || `/api/audits/${r.audit.id}/rapport-page/`;
+                    const downloadUrl = r.download_url || `/api/reports/${r.id}/telecharger/?download=1`;
+
                     tbody.innerHTML += `
                         <tr>
+                            <td><strong>${auditTitre}</strong></td>
+                            <td><small style="color:var(--text-muted);">${dateFormatted}</small></td>
+                            <td>${r.titre}</td>
+                            <td><strong style="color: ${scoreColor};">${r.scoreFinal}/100</strong></td>
                             <td><span class="badge badge-INVITE">${r.format}</span></td>
-                            <td><strong>${r.titre}</strong></td>
-                            <td>${r.audit.cible}</td>
-                            <td><strong>${r.scoreFinal}/100</strong></td>
-                            <td><span class="badge badge-${r.statut}">${r.statut_display}</span></td>
                             <td>
-                                <button class="btn" style="padding: 4px 10px;" onclick="validerReport('${r.id}')">Valider</button>
-                                <button class="btn btn-outline" style="padding: 4px 10px;" onclick="publierReport('${r.id}')">Publier</button>
-                                <a href="/api/reports/${r.id}/telecharger/" target="_blank" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">Télécharger</a>
+                                <a href="${readUrl}" target="_blank" class="btn" style="padding: 4px 10px; text-decoration:none; margin-right: 4px;">👁️ Lire</a>
+                                <a href="${downloadUrl}" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">📥 Télécharger</a>
                             </td>
                         </tr>
                     `;

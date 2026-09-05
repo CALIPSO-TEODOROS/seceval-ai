@@ -57,7 +57,7 @@ class Rapport(models.Model):
     class Meta:
         verbose_name = "Rapport d'Évaluation"
         verbose_name_plural = "Rapports d'Évaluation"
-        ordering = ['-dateGeneration']
+        ordering = ['audit__titre', '-dateGeneration']
 
     def __str__(self):
         return f"Rapport [{self.format}] {self.titre} - Score: {self.scoreFinal}/100 ({self.get_statut_display()})"

@@ -77,7 +77,7 @@ class ReportAPITests(TestCase):
         data = res.json()
         self.assertGreaterEqual(data['total'], 1)
 
-        # Create Report
+        # Manual report creation disabled -> expect 403 Forbidden
         res_create = self.client.post(
             reverse('reports:list-create'),
             data=json.dumps({
@@ -87,7 +87,7 @@ class ReportAPITests(TestCase):
             }),
             content_type='application/json'
         )
-        self.assertEqual(res_create.status_code, 201)
+        self.assertEqual(res_create.status_code, 403)
 
     def test_report_detail_and_lifecycle_api(self):
         # Detail

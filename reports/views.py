@@ -15,16 +15,18 @@ def reports_list_create_view(request):
     """GET: List reports. POST: Create a new report draft."""
     if request.method == 'GET':
         audit_id = request.GET.get('audit_id')
-        queryset = Rapport.objects.select_related('audit', 'audit__cible').all()
+        queryset = Rapport.objects.select_related('audit', 'audit__cible').all().order_by('audit__titre', '-dateGeneration')
         if audit_id:
             queryset = queryset.filter(audit_id=audit_id)
 
         reports_data = []
         for r in queryset:
+            audit_titre = r.audit.titre or f"Audit {r.audit.get_type_display()} - {r.audit.cible.valeur}"
             reports_data.append({
                 'id': str(r.id),
                 'audit': {
                     'id': str(r.audit.id),
+                    'titre': audit_titre,
                     'type': r.audit.get_type_display(),
                     'cible': r.audit.cible.valeur
                 },
@@ -36,55 +38,17 @@ def reports_list_create_view(request):
                 'scoreFinal': r.scoreFinal,
                 'cheminFichier': r.cheminFichier,
                 'dateGeneration': r.dateGeneration.isoformat(),
+                'date_display': r.dateGeneration.strftime('%d/%m/%Y %H:%M'),
+                'read_url': f"/api/audits/{r.audit.id}/rapport-page/",
+                'download_url': f"/api/reports/{r.id}/telecharger/?download=1",
                 'total_vulnerabilites': r.vulnerabilites.count()
             })
         return json_response({'rapports': reports_data, 'total': len(reports_data)})
 
     elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            audit_id = data.get('audit_id')
-            titre = data.get('titre')
-            report_format = data.get('format', FormatRapport.HTML)
-
-            if not audit_id or not titre:
-                return json_response({'error': 'Les champs audit_id et titre sont obligatoires.'}, status=400)
-
-            audit = Audit.objects.get(id=audit_id)
-
-            rapport = Rapport.objects.create(
-                audit=audit,
-                titre=titre,
-                format=report_format,
-                statut=StatutRapport.BROUILLON
-            )
-
-            # Auto-génération du fichier
-            rapport.generer()
-
-            JournalActivite.enregistrer_depuis_requete(
-                request,
-                action="CREATION_RAPPORT",
-                ressource=rapport.titre,
-                details=f"Création et génération du rapport [{rapport.format}] '{rapport.titre}'.",
-                projet=audit.projet,
-                audit=audit
-            )
-
-            return json_response({
-                'message': 'Rapport d\'évaluation créé et généré avec succès.',
-                'rapport': {
-                    'id': str(rapport.id),
-                    'titre': rapport.titre,
-                    'format': rapport.format,
-                    'statut': rapport.statut,
-                    'scoreFinal': rapport.scoreFinal
-                }
-            }, status=201)
-        except Audit.DoesNotExist:
-            return json_response({'error': 'Audit introuvable.'}, status=404)
-        except Exception as e:
-            return json_response({'error': str(e)}, status=400)
+        return json_response({
+            'error': "La génération manuelle de rapports est désactivée. Les rapports d'évaluation sont automatiquement générés à la fin de chaque audit et classés par titre d'audit et date."
+        }, status=403)
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
@@ -234,9 +198,12 @@ def report_telecharger_view(request, report_id):
             FormatRapport.PDF: 'text/html'  # Simulé
         }
 
+        download = request.GET.get('download', '0') == '1'
+        disposition = 'attachment' if download else 'inline'
+
         response = HttpResponse(content, content_type=content_types.get(r.format, 'text/plain'))
         ext = r.format.lower()
-        response['Content-Disposition'] = f'inline; filename="rapport_audit_{r.id}.{ext}"'
+        response['Content-Disposition'] = f'{disposition}; filename="rapport_audit_{r.id}.{ext}"'
         return response
     except Rapport.DoesNotExist:
         return json_response({'error': 'Rapport introuvable.'}, status=404)
