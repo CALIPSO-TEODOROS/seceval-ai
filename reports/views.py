@@ -195,7 +195,7 @@ def report_telecharger_view(request, report_id):
             FormatRapport.JSON: 'application/json',
             FormatRapport.CSV: 'text/csv',
             FormatRapport.HTML: 'text/html',
-            FormatRapport.PDF: 'text/html'  # Simulé
+            FormatRapport.PDF: 'application/pdf'
         }
 
         download = request.GET.get('download', '0') == '1'

@@ -41,7 +41,7 @@ class Rapport(models.Model):
     format = models.CharField(
         max_length=10,
         choices=FormatRapport.choices,
-        default=FormatRapport.HTML,
+        default=FormatRapport.PDF,
         verbose_name="Format d'export"
     )
     statut = models.CharField(

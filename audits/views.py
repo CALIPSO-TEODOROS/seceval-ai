@@ -70,7 +70,7 @@ def audits_list_create_view(request):
             frequence = data.get('frequence', 'AUCUNE')
             heure_execution_str = data.get('heureExecution')
             prochaine_exec = data.get('prochaineExecution')
-            webhook_n8n_url = data.get('webhookN8nUrl', '').strip() or 'https://n8n.seceval.io/webhook/audit-trigger-api'
+            webhook_n8n_url = data.get('webhookN8nUrl', '').strip() or 'https://n8n.zendaya.tech/webhook-test/ad59815e-2809-4f25-a120-b24b5f02a831'
             emails_notification = data.get('emailsNotification', '').strip()
 
             if not projet_id or not cible_id:
@@ -527,11 +527,11 @@ def audit_callback_n8n_view(request, audit_id):
             new_rapport = Rapport.objects.create(
                 titre=f"Rapport Automatise n8n - {audit.titre or audit.cible.valeur}",
                 audit=audit,
-                format=FormatRapport.HTML,
+                format=FormatRapport.PDF,
                 statut=StatutRapport.PUBLIE,
                 scoreFinal=audit.scoreSecurite
             )
-            filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.html"
+            filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.pdf"
             filepath = os.path.join(dir_path, filename)
             html_content = f"""<!DOCTYPE html>
 <html>
