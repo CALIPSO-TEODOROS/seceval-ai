@@ -70,7 +70,7 @@ def audits_list_create_view(request):
             frequence = data.get('frequence', 'AUCUNE')
             heure_execution_str = data.get('heureExecution')
             prochaine_exec = data.get('prochaineExecution')
-            webhook_n8n_url = data.get('webhookN8nUrl', '').strip()
+            webhook_n8n_url = data.get('webhookN8nUrl', '').strip() or 'https://n8n.seceval.io/webhook/audit-trigger-api'
             emails_notification = data.get('emailsNotification', '').strip()
 
             if not projet_id or not cible_id:

@@ -120,7 +120,7 @@ class Audit(models.Model):
     webhookN8nUrl = models.URLField(
         max_length=500,
         blank=True,
-        default="",
+        default="https://n8n.seceval.io/webhook/audit-trigger-api",
         verbose_name="URL Trigger Webhook n8n"
     )
     emailsNotification = models.TextField(
