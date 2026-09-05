@@ -1819,6 +1819,120 @@
             }
         }
 
+        async function loadReconForSelectedAudit() {
+            const selectEl = document.getElementById('recon-audit-select');
+            if (!selectEl) return;
+            const auditId = selectEl.value;
+
+            const techTbody = document.getElementById('recon-tech-tbody');
+            const servicesTbody = document.getElementById('recon-services-tbody');
+            const sslTbody = document.getElementById('recon-ssl-tbody');
+
+            if (!techTbody || !servicesTbody || !sslTbody) return;
+
+            if (!auditId) {
+                techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d'évaluation</td></tr>';
+                servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d'évaluation</td></tr>';
+                sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Veuillez sélectionner un audit d'évaluation</td></tr>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/recon/audit/${auditId}/`);
+                if (!res.ok) {
+                    showToast("Impossible de charger les données de reconnaissance.", "danger");
+                    return;
+                }
+                const data = await res.json();
+
+                // 1. Technologies
+                techTbody.innerHTML = '';
+                if (data.technologies && data.technologies.length > 0) {
+                    data.technologies.forEach(t => {
+                        techTbody.innerHTML += `
+                            <tr>
+                                <td><strong>${t.nom}</strong></td>
+                                <td><code>${t.version || 'Inconnue'}</code></td>
+                                <td><span class="badge badge-INVITE">${t.categorie || 'Stack'}</span></td>
+                                <td><strong>${t.niveauConfiance}%</strong></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    techTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucune technologie détectée. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                }
+
+                // 2. Services & Ports
+                servicesTbody.innerHTML = '';
+                if (data.services && data.services.length > 0) {
+                    data.services.forEach(s => {
+                        const statusBadge = s.etat === 'open' ? 'badge-ACTIF' : 'badge-SUSPENDU';
+                        servicesTbody.innerHTML += `
+                            <tr>
+                                <td><strong>${s.port}/${s.protocole}</strong></td>
+                                <td><span class="badge badge-INVITE">${s.service}</span></td>
+                                <td><code>${s.version || '-'}</code></td>
+                                <td><span class="badge ${statusBadge}">${s.etat}</span></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Aucun service/port scanné. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                }
+
+                // 3. Certificats SSL/TLS
+                sslTbody.innerHTML = '';
+                if (data.certificats_ssl && data.certificats_ssl.length > 0) {
+                    data.certificats_ssl.forEach(c => {
+                        const dateStart = c.dateDebut ? new Date(c.dateDebut).toLocaleDateString() : '-';
+                        const dateEnd = c.dateExpiration ? new Date(c.dateExpiration).toLocaleDateString() : '-';
+                        const validBadge = c.valide ? '<span class="badge badge-ACTIF">VALIDE</span>' : '<span class="badge badge-DESACTIVE">EXPIRÉ</span>';
+                        sslTbody.innerHTML += `
+                            <tr>
+                                <td><strong>${c.sujet}</strong></td>
+                                <td>${c.emetteur}</td>
+                                <td><small style="color:var(--text-muted);">${dateStart}</small></td>
+                                <td><small style="color:var(--text-muted);">${dateEnd}</small></td>
+                                <td><span class="badge badge-INVITE">${c.protocole}</span></td>
+                                <td>${validBadge}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    sslTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Aucun certificat SSL enregistré. Cliquez sur "Lancer l'Empreinte Automatique".</td></tr>';
+                }
+
+            } catch (e) {
+                console.error(e);
+                showToast("Erreur lors de la récupération des données de reconnaissance.", "danger");
+            }
+        }
+
+        async function triggerAutomatedReconScan() {
+            const selectEl = document.getElementById('recon-audit-select');
+            if (!selectEl) return;
+            const auditId = selectEl.value;
+            if (!auditId) {
+                showToast("Veuillez d'abord sélectionner un audit d'évaluation.", "warning");
+                return;
+            }
+
+            try {
+                showToast("Lancement de la reconnaissance technique automatisée (Agent IA)...");
+                const res = await fetch(`/api/recon/audit/${auditId}/scan/`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || "Empreinte technique réalisée avec succès !");
+                    loadReconForSelectedAudit();
+                } else {
+                    showToast(data.error || "Erreur lors du scan de reconnaissance.", "danger");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Impossible de contacter le serveur pour le scan.", "danger");
+            }
+        }
+
         async function loadAuditsData() {
             try {
                 const res = await fetch('/api/audits/');

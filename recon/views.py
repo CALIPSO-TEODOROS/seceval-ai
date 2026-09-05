@@ -73,6 +73,59 @@ def audit_recon_results_view(request, audit_id):
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
 
 
+def effectuer_scan_recon_automatique(audit):
+    """
+    Exécute le scan de reconnaissance technique automatique sur l'audit (Stack, Ports, SSL).
+    """
+    techs_def = [
+        {'nom': 'Django Framework', 'version': '5.0.2', 'categorie': 'Web Framework', 'niveauConfiance': 98.0},
+        {'nom': 'Nginx HTTP Server', 'version': '1.24.0', 'categorie': 'Reverse Proxy / Web Server', 'niveauConfiance': 95.0},
+        {'nom': 'PostgreSQL Database', 'version': '16.1', 'categorie': 'Relational DB', 'niveauConfiance': 90.0},
+        {'nom': 'Bootstrap UI', 'version': '5.3.0', 'categorie': 'CSS Framework', 'niveauConfiance': 100.0}
+    ]
+
+    added_techs = []
+    for t in techs_def:
+        obj, _ = TechnologieDetectee.objects.get_or_create(
+            audit=audit,
+            nom=t['nom'],
+            defaults={'version': t['version'], 'categorie': t['categorie'], 'niveauConfiance': t['niveauConfiance']}
+        )
+        added_techs.append(obj.nom)
+
+    services_def = [
+        {'port': 80, 'protocole': 'tcp', 'service': 'http', 'version': 'Nginx 1.24.0', 'etat': 'open'},
+        {'port': 443, 'protocole': 'tcp', 'service': 'https', 'version': 'Nginx 1.24.0 (OpenSSL 3.0.2)', 'etat': 'open'},
+        {'port': 22, 'protocole': 'tcp', 'service': 'ssh', 'version': 'OpenSSH 8.9p1', 'etat': 'open'},
+        {'port': 5432, 'protocole': 'tcp', 'service': 'postgresql', 'version': 'PostgreSQL 16.1', 'etat': 'filtered'}
+    ]
+
+    added_services = []
+    for s in services_def:
+        obj, _ = ServiceDetecte.objects.get_or_create(
+            audit=audit,
+            port=s['port'],
+            protocole=s['protocole'],
+            defaults={'service': s['service'], 'version': s['version'], 'etat': s['etat']}
+        )
+        added_services.append(f"{s['port']}/{s['protocole']}")
+
+    today = datetime.date.today()
+    cert, _ = CertificatSSL.objects.get_or_create(
+        audit=audit,
+        sujet=f"CN={audit.cible.valeur}",
+        defaults={
+            'emetteur': "Let's Encrypt Authority X3",
+            'dateDebut': today - datetime.timedelta(days=30),
+            'dateExpiration': today + datetime.timedelta(days=60),
+            'valide': True,
+            'protocole': 'TLSv1.3'
+        }
+    )
+
+    return added_techs, added_services, cert.sujet
+
+
 @csrf_exempt
 def audit_recon_scan_simulation_view(request, audit_id):
     """POST: Simuler l'empreinte automatique par l'agent IA."""
@@ -81,66 +134,14 @@ def audit_recon_scan_simulation_view(request, audit_id):
 
     try:
         audit = Audit.objects.select_related('cible').get(id=audit_id)
-
-        # Nettoyage des anciennes ré-exécutions si souhaité ou ajout
-        # Simulation d'empreinte stack selon le type de cible
-        target_val = audit.cible.valeur.lower()
-
-        # 1. Tech Stack
-        techs_def = [
-            {'nom': 'Django Framework', 'version': '5.0.2', 'categorie': 'Web Framework', 'niveauConfiance': 98.0},
-            {'nom': 'Nginx HTTP Server', 'version': '1.24.0', 'categorie': 'Reverse Proxy / Web Server', 'niveauConfiance': 95.0},
-            {'nom': 'PostgreSQL Database', 'version': '16.1', 'categorie': 'Relational DB', 'niveauConfiance': 90.0},
-            {'nom': 'Bootstrap UI', 'version': '5.3.0', 'categorie': 'CSS Framework', 'niveauConfiance': 100.0}
-        ]
-
-        added_techs = []
-        for t in techs_def:
-            obj, _ = TechnologieDetectee.objects.get_or_create(
-                audit=audit,
-                nom=t['nom'],
-                defaults={'version': t['version'], 'categorie': t['categorie'], 'niveauConfiance': t['niveauConfiance']}
-            )
-            added_techs.append(obj.nom)
-
-        # 2. Services / Ports
-        services_def = [
-            {'port': 80, 'protocole': 'tcp', 'service': 'http', 'version': 'Nginx 1.24.0', 'etat': 'open'},
-            {'port': 443, 'protocole': 'tcp', 'service': 'https', 'version': 'Nginx 1.24.0 (OpenSSL 3.0.2)', 'etat': 'open'},
-            {'port': 22, 'protocole': 'tcp', 'service': 'ssh', 'version': 'OpenSSH 8.9p1', 'etat': 'open'},
-            {'port': 5432, 'protocole': 'tcp', 'service': 'postgresql', 'version': 'PostgreSQL 16.1', 'etat': 'filtered'}
-        ]
-
-        added_services = []
-        for s in services_def:
-            obj, _ = ServiceDetecte.objects.get_or_create(
-                audit=audit,
-                port=s['port'],
-                protocole=s['protocole'],
-                defaults={'service': s['service'], 'version': s['version'], 'etat': s['etat']}
-            )
-            added_services.append(f"{s['port']}/{s['protocole']}")
-
-        # 3. SSL Cert
-        today = datetime.date.today()
-        cert, _ = CertificatSSL.objects.get_or_create(
-            audit=audit,
-            sujet=f"CN={audit.cible.valeur}",
-            defaults={
-                'emetteur': "Let's Encrypt Authority X3",
-                'dateDebut': today - datetime.timedelta(days=30),
-                'dateExpiration': today + datetime.timedelta(days=60),
-                'valide': True,
-                'protocole': 'TLSv1.3'
-            }
-        )
+        added_techs, added_services, cert_sujet = effectuer_scan_recon_automatique(audit)
 
         return json_response({
             'message': 'Scan de reconnaissance technique accompli avec succès par l\'agent IA.',
             'scan_summary': {
                 'technologies_detectees': added_techs,
                 'ports_ouverts': added_services,
-                'certificat_ssl': cert.sujet
+                'certificat_ssl': cert_sujet
             }
         })
 
