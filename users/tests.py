@@ -233,6 +233,8 @@ class UserManagementAPITests(TestCase):
             nom='List User',
             password='Password123!'
         )
+        role = Role.objects.create(nom="Auditeur Test", description="Desc")
+
         # List API
         list_response = self.client.get(reverse('users:users-list'))
         self.assertEqual(list_response.status_code, 200)
@@ -248,6 +250,16 @@ class UserManagementAPITests(TestCase):
         self.assertEqual(status_response.status_code, 200)
         user.refresh_from_db()
         self.assertEqual(user.statut, StatutUtilisateur.SUSPENDU)
+
+        # Role change API
+        role_response = self.client.post(
+            reverse('users:user-role-change', kwargs={'user_id': user.id}),
+            data=json.dumps({'role_id': str(role.id)}),
+            content_type='application/json'
+        )
+        self.assertEqual(role_response.status_code, 200)
+        user.refresh_from_db()
+        self.assertIn(role, user.roles.all())
 
     def test_roles_and_members_api(self):
         user = Utilisateur.objects.create_user(

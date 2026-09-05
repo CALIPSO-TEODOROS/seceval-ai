@@ -6,6 +6,7 @@ from .views import (
     profile_view,
     users_list_view,
     user_status_change_view,
+    user_role_change_view,
     roles_list_view,
     members_list_view,
     web_ui_view,
@@ -25,6 +26,7 @@ urlpatterns = [
     path('profile/', profile_view, name='profile'),
     path('list/', users_list_view, name='users-list'),
     path('<uuid:user_id>/status/', user_status_change_view, name='user-status-change'),
+    path('<uuid:user_id>/roles/', user_role_change_view, name='user-role-change'),
     path('roles/', roles_list_view, name='roles-list'),
     path('members/', members_list_view, name='members-list'),
 ]

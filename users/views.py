@@ -47,6 +47,9 @@ def register_view(request):
         password = data.get('password')
         statut = data.get('statut', StatutUtilisateur.ACTIF)
 
+        role_id = data.get('role_id')
+        role_ids = data.get('roles') or ([] if not role_id else [role_id])
+
         if not email or not nom or not password:
             return json_response({'error': 'Les champs email, nom et password sont requis.'}, status=400)
 
@@ -60,11 +63,17 @@ def register_view(request):
             statut=statut
         )
 
+        if role_ids:
+            roles_objs = Role.objects.filter(id__in=[r for r in role_ids if r])
+            if not roles_objs.exists():
+                roles_objs = Role.objects.filter(nom__in=[r for r in role_ids if r])
+            user.roles.set(roles_objs)
+
         JournalActivite.enregistrer_depuis_requete(
             request,
             action="CREATION_UTILISATEUR",
             ressource=user.email,
-            details=f"Création de l'utilisateur '{user.nom}' ({user.email})."
+            details=f"Création de l'utilisateur '{user.nom}' ({user.email}) avec les rôles: {[r.nom for r in user.roles.all()]}."
         )
 
         return json_response({
@@ -74,6 +83,7 @@ def register_view(request):
                 'nom': user.nom,
                 'email': user.email,
                 'statut': user.statut,
+                'roles': [r.nom for r in user.roles.all()],
                 'dateCreation': user.dateCreation.isoformat()
             }
         }, status=201)
@@ -242,6 +252,48 @@ def user_status_change_view(request, user_id):
                 'nom': user.nom,
                 'statut': user.statut,
                 'statut_display': user.get_statut_display()
+            }
+        })
+    except Utilisateur.DoesNotExist:
+        return json_response({'error': 'Utilisateur non trouvé.'}, status=404)
+    except Exception as e:
+        return json_response({'error': str(e)}, status=400)
+
+
+@csrf_exempt
+def user_role_change_view(request, user_id):
+    """Affecte ou modifie les rôles d'un utilisateur."""
+    if request.method != 'POST':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        role_id = data.get('role_id')
+        role_ids = data.get('roles') or ([] if not role_id else [role_id])
+
+        user = Utilisateur.objects.get(id=user_id)
+
+        roles_objs = []
+        if role_ids:
+            roles_objs = Role.objects.filter(id__in=[r for r in role_ids if r])
+            if not roles_objs.exists():
+                roles_objs = Role.objects.filter(nom__in=[r for r in role_ids if r])
+
+        user.roles.set(roles_objs)
+
+        JournalActivite.enregistrer_depuis_requete(
+            request,
+            action="MODIFICATION_ROLE_UTILISATEUR",
+            ressource=user.email,
+            details=f"Modification des rôles de l'utilisateur '{user.nom}' ({user.email}) -> {[r.nom for r in user.roles.all()]}."
+        )
+
+        return json_response({
+            'message': f'Rôles de {user.nom} mis à jour avec succès.',
+            'user': {
+                'id': str(user.id),
+                'nom': user.nom,
+                'roles': [r.nom for r in user.roles.all()]
             }
         })
     except Utilisateur.DoesNotExist:
