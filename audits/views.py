@@ -318,7 +318,23 @@ def audit_terminer_view(request, audit_id):
             extraire_et_synchroniser_vulnerabilites_audit(audit)
         except Exception as ve:
             print(f"[Warning] Vulnerability extraction error: {ve}")
-        send_audit_completion_notifications(audit)
+
+        from reports.models import Rapport, FormatRapport, StatutRapport
+        new_rapport = audit.rapports.order_by('-dateGeneration').first()
+        filepath = new_rapport.cheminFichier if (new_rapport and new_rapport.cheminFichier) else None
+        if not new_rapport:
+            new_rapport = Rapport.objects.create(
+                titre=f"Rapport d'Évaluation - {audit.titre or audit.cible.valeur}",
+                audit=audit,
+                format=FormatRapport.PDF,
+                statut=StatutRapport.PUBLIE,
+                scoreFinal=audit.scoreSecurite
+            )
+            new_rapport.generer()
+            new_rapport.publier()
+            filepath = new_rapport.cheminFichier
+
+        send_audit_completion_notifications(audit, new_rapport, filepath)
         return json_response({
             'message': 'Audit terminé avec succès.',
             'audit': {
@@ -326,7 +342,7 @@ def audit_terminer_view(request, audit_id):
                 'statut': audit.statut,
                 'scoreSecurite': audit.scoreSecurite,
                 'progression': audit.progression,
-                'dateFin': audit.dateFin.isoformat()
+                'dateFin': audit.dateFin.isoformat() if audit.dateFin else timezone.now().isoformat()
             }
         })
     except Audit.DoesNotExist:
@@ -394,6 +410,10 @@ def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
     from django.core.mail import EmailMessage
     from notifications_app.models import Notification, CanalNotification
     from users.models import Utilisateur
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.application import MIMEApplication
 
     recipients = []
     if audit.emailsNotification:
@@ -408,7 +428,7 @@ def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
         if first_user and first_user.email:
             recipients = [first_user.email]
         else:
-            recipients = [getattr(settings, 'DEFAULT_FROM_EMAIL', 'brandon.follah@saintjeaningenieur.org')]
+            recipients = [getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech')]
 
     titre_audit = audit.titre or f"Audit {audit.get_type_display()} - {audit.cible.valeur}"
     subject = f"[SecEval AI] Notification d'audit terminé : {titre_audit}"
@@ -421,7 +441,7 @@ def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
 
     body_text = f"""Bonjour,
 
-L'audit de sécurité SecEval AI est terminé. Retrouvez ci-dessous les informations d'identification et le rapport complet.
+L'audit de sécurité SecEval AI est terminé avec succès. Retrouvez ci-dessous les informations d'évaluation et le rapport complet joint.
 
 --- INFORMATIONS DE L'AUDIT ---
 - ID de l'audit : {audit.id}
@@ -434,24 +454,50 @@ L'audit de sécurité SecEval AI est terminé. Retrouvez ci-dessous les informat
 - Date de fin : {date_fin_str}
 - Destinataires : {', '.join(recipients)}
 
-Le rapport d'évaluation est joint à ce courrier électronique.
+Le rapport d'évaluation complet est joint à ce courrier électronique.
 
 Cordialement,
 L'équipe SecEval AI
 """
 
+    email_sent = False
+    # Tentative 1: Backend Email Django standard
     try:
         email = EmailMessage(
             subject=subject,
             body=body_text,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'brandon.follah@saintjeaningenieur.org'),
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech'),
             to=recipients
         )
         if filepath and os.path.exists(filepath):
             email.attach_file(filepath)
-        email.send(fail_silently=True)
+        email.send(fail_silently=False)
+        email_sent = True
     except Exception as e:
-        print(f"Erreur lors de l'envoi du mail de notification d'audit: {e}")
+        print(f"[Email Primary Backend Warning] {e}. Tentative via Postfix local...")
+
+    # Tentative 2: Postfix local (localhost:25) en fallback si le premier serveur échoue
+    if not email_sent:
+        try:
+            msg = MIMEMultipart()
+            msg['Subject'] = subject
+            msg['From'] = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech')
+            msg['To'] = ', '.join(recipients)
+            msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
+
+            if filepath and os.path.exists(filepath):
+                with open(filepath, 'rb') as f:
+                    part = MIMEApplication(f.read(), Name=os.path.basename(filepath))
+                part['Content-Disposition'] = f'attachment; filename="{os.path.basename(filepath)}"'
+                msg.attach(part)
+
+            s = smtplib.SMTP('localhost', 25, timeout=10)
+            s.send_message(msg)
+            s.quit()
+            email_sent = True
+            print("[Email Local Postfix Fallback SUCCESS]")
+        except Exception as pe:
+            print(f"[Email Local Postfix Error] {pe}")
 
     destinataire_user = audit.lancePar or Utilisateur.objects.first()
     if destinataire_user:
@@ -462,7 +508,7 @@ L'équipe SecEval AI
                 canal=CanalNotification.EMAIL,
                 sujet=subject,
                 message=f"Rapport d'audit '{titre_audit}' envoyé à : {', '.join(recipients)}. Score : {audit.scoreSecurite}/100.",
-                statut="ENVOYE",
+                statut="ENVOYE" if email_sent else "ECHEC",
                 dateEnvoi=timezone.now()
             )
         except Exception as e:
@@ -511,8 +557,6 @@ def audit_callback_n8n_view(request, audit_id=None):
         return json_response({'error': 'Aucun audit disponible pour enregistrer les résultats.'}, status=404)
 
     try:
-
-
         rapport_text = data.get('rapport') or data.get('output') or data.get('result') or data.get('text') or ''
         score = float(data.get('scoreSecurite', 85.0))
         progression = int(data.get('progression', 100))
@@ -532,17 +576,24 @@ def audit_callback_n8n_view(request, audit_id=None):
         latest_exec.statut = StatutAudit.TERMINE
         latest_exec.scoreSecurite = audit.scoreSecurite
         latest_exec.resultatBrutN8n = data
-        latest_exec.rapportText = rapport_text
+        latest_exec.rapportText = str(rapport_text) if rapport_text else ''
         latest_exec.dateFin = timezone.now()
         latest_exec.save()
 
-        # Enregistrer un rapport d'évaluation si du contenu texte est fourni par n8n
-        new_rapport = None
-        filepath = None
-        if rapport_text:
-            from reports.models import Rapport, FormatRapport, StatutRapport
-            dir_path = os.path.join(settings.BASE_DIR, 'media', 'reports')
-            os.makedirs(dir_path, exist_ok=True)
+        # 1. Extraction et synchronisation des vulnérabilités de l'audit d'abord
+        try:
+            from vulns.services import extraire_et_synchroniser_vulnerabilites_audit
+            extraire_et_synchroniser_vulnerabilites_audit(audit)
+        except Exception as ve:
+            print(f"[Warning] n8n Vulnerability extraction error: {ve}")
+
+        # 2. Enregistrer TOUJOURS un rapport d'évaluation (PDF/HTML) pour cet audit
+        from reports.models import Rapport, FormatRapport, StatutRapport
+        dir_path = os.path.join(settings.BASE_DIR, 'media', 'reports')
+        os.makedirs(dir_path, exist_ok=True)
+
+        new_rapport = audit.rapports.order_by('-dateGeneration').first()
+        if not new_rapport:
             new_rapport = Rapport.objects.create(
                 titre=f"Rapport Automatise n8n - {audit.titre or audit.cible.valeur}",
                 audit=audit,
@@ -550,10 +601,25 @@ def audit_callback_n8n_view(request, audit_id=None):
                 statut=StatutRapport.PUBLIE,
                 scoreFinal=audit.scoreSecurite
             )
-            filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.pdf"
-            filepath = os.path.join(dir_path, filename)
-            rapport_html_body = rapport_text.replace('\n', '<br>')
-            html_content = f"""<!DOCTYPE html>
+        else:
+            new_rapport.scoreFinal = audit.scoreSecurite
+            new_rapport.statut = StatutRapport.PUBLIE
+            new_rapport.save(update_fields=['scoreFinal', 'statut'])
+
+        # Lier toutes les vulnérabilités détectées au rapport
+        if hasattr(audit, 'vulnerabilites'):
+            new_rapport.vulnerabilites.set(audit.vulnerabilites.all())
+
+        filename = f"rapport_n8n_{audit.id}_{new_rapport.id}.pdf"
+        filepath = os.path.join(dir_path, filename)
+
+        if not rapport_text:
+            vulns_list = audit.vulnerabilites.all()
+            vulns_summary = "<br>".join([f"• [{v.gravite}] {v.titre} (CVSS {v.scoreCVSS})" for v in vulns_list]) if vulns_list.exists() else "Aucune vulnérabilité critique détectée."
+            rapport_text = f"Audit de sécurité '{audit.titre or audit.cible.valeur}' finalisé avec succès par l'agent IA SecEval n8n.<br>Score Global: {audit.scoreSecurite}/100.<br><br><strong>Synthèse des Vulnérabilités:</strong><br>{vulns_summary}"
+
+        rapport_html_body = str(rapport_text).replace('\n', '<br>')
+        html_content = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -566,15 +632,20 @@ hr {{ border-color: #334155; }}
 </style>
 </head>
 <body>
+<h1>🛡️ {new_rapport.titre}</h1>
+<p><strong>Cible d'évaluation :</strong> {audit.cible.valeur if audit.cible else 'N/A'}</p>
+<p><strong>Score Final :</strong> {audit.scoreSecurite} / 100</p>
+<hr>
 <div>{rapport_html_body}</div>
 </body>
 </html>"""
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            new_rapport.cheminFichier = filepath
-            new_rapport.save(update_fields=['cheminFichier'])
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(html_content)
 
-        # Envoi automatique de notification par email avec rapport
+        new_rapport.cheminFichier = filepath
+        new_rapport.save(update_fields=['cheminFichier'])
+
+        # Envoi automatique de notification par email avec le rapport en pièce jointe
         send_audit_completion_notifications(audit, new_rapport, filepath)
 
         # Extraction et synchronisation automatique des vulnérabilités de l'audit
