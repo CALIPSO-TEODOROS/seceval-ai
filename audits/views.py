@@ -21,12 +21,30 @@ def json_response(data, status=200):
 
 
 @csrf_exempt
+@csrf_exempt
 def audits_list_create_view(request):
     """GET: List all audits. POST: Create a new audit."""
     if request.method == 'GET':
+        now = timezone.now()
         audits = Audit.objects.select_related('projet', 'cible', 'lancePar').all().order_by('-dateCreation')
         audits_data = []
         for a in audits:
+            # Vérification d'expiration (Timeout 3 min) et calcul de la progression en direct
+            if a.statut == StatutAudit.EN_COURS:
+                ref_time = a.dateDernierLancement or a.dateDebut
+                if ref_time:
+                    elapsed = (now - ref_time).total_seconds()
+                    if elapsed > 180:
+                        a.statut = StatutAudit.ECHOUE
+                        a.progression = 0
+                        a.resultatBrutN8n = f"⚠️ Expiration du délai (Timeout 3 min) : Le workflow n8n n'a pas renvoyé de résultats."
+                        a.save(update_fields=['statut', 'progression', 'resultatBrutN8n'])
+                    else:
+                        calculated_prog = min(85, int(15 + (elapsed / 180.0) * 70))
+                        if calculated_prog != a.progression:
+                            a.progression = calculated_prog
+                            a.save(update_fields=['progression'])
+
             audits_data.append({
                 'id': str(a.id),
                 'titre': a.titre or f"Audit {a.get_type_display()} - {a.cible.valeur}",
@@ -54,7 +72,6 @@ def audits_list_create_view(request):
                 'dateDebut': a.dateDebut.isoformat() if a.dateDebut else None,
                 'dateFin': a.dateFin.isoformat() if a.dateFin else None
             })
-
 
         return json_response({'audits': audits_data, 'total': len(audits_data)})
 

@@ -196,10 +196,24 @@ class Audit(models.Model):
                 headers={'User-Agent': 'SecEvalAI-Webhook/1.0'},
                 method='GET'
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                return resp.status in [200, 201, 202, 204]
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                if resp.status in [200, 201, 202, 204]:
+                    self.progression = 15
+                    self.save(update_fields=['progression'])
+                    return True
+                else:
+                    self.statut = StatutAudit.ECHOUE
+                    self.progression = 0
+                    self.resultatBrutN8n = f"⚠️ Erreur HTTP Webhook n8n ({resp.status})"
+                    self.save(update_fields=['statut', 'progression', 'resultatBrutN8n'])
+                    return False
         except Exception as e:
-            print(f"[Webhook n8n Warning] Impossible de contacter {self.webhookN8nUrl}: {e}")
+            err_msg = str(e)
+            print(f"[Webhook n8n Error] Impossible de contacter {self.webhookN8nUrl}: {err_msg}")
+            self.statut = StatutAudit.ECHOUE
+            self.progression = 0
+            self.resultatBrutN8n = f"⚠️ Échec de connexion au Webhook n8n: {err_msg}"
+            self.save(update_fields=['statut', 'progression', 'resultatBrutN8n'])
             return False
 
 

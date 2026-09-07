@@ -2185,6 +2185,23 @@
             }
         }
 
+        let globalAuditPollInterval = null;
+        function startGlobalAuditPolling() {
+            if (!globalAuditPollInterval) {
+                globalAuditPollInterval = setInterval(() => {
+                    loadAuditsData();
+                    loadExecutiveDashboardStats();
+                }, 4000);
+            }
+        }
+
+        function stopGlobalAuditPolling() {
+            if (globalAuditPollInterval) {
+                clearInterval(globalAuditPollInterval);
+                globalAuditPollInterval = null;
+            }
+        }
+
         async function loadAuditsData() {
             try {
                 const res = await fetch('/api/audits/');
@@ -2204,12 +2221,16 @@
                     if (reconSelect) reconSelect.innerHTML += `<option value="${a.id}">${a.type_display} - ${cibleVal} [${a.statut_display}]</option>`;
                 });
 
+                let hasRunningAudits = false;
+
                 renderPaginatedTable({
                     tableBodyId: 'audits-table-body',
                     items: data.audits || [],
                     pageSize: 10,
                     emptyMessage: 'Aucun audit planifié ou exécuté.',
                     renderRowFn: (a) => {
+                        if (a.statut === 'EN_COURS') hasRunningAudits = true;
+
                         let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
                         actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">📊 Résultats N8N</button>`;
                         actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">📜 Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
@@ -2220,6 +2241,8 @@
                                 <button class="btn btn-outline" style="padding: 4px 10px;" onclick="terminerAudit('${a.id}')">Terminer</button>
                                 <button class="btn btn-danger" style="padding: 4px 10px;" onclick="arreterAudit('${a.id}')">Arrêter</button>
                             `;
+                        } else if (a.statut === 'ECHOUE') {
+                            actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px; border-color:#ef4444; color:#ef4444;" onclick="demarrerAudit('${a.id}')">🔁 Relancer</button>`;
                         }
                         actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px;" onclick="viewAuditPlan('${a.id}')">Voir Plan</button>`;
 
@@ -2233,6 +2256,35 @@
 
                         const targetVal = (a.cible && a.cible.valeur) ? a.cible.valeur : '-';
                         const projNom = (a.projet && a.projet.nom) ? a.projet.nom : '-';
+
+                        const errDetails = typeof a.resultatBrutN8n === 'string' ? a.resultatBrutN8n : (a.resultatBrutN8n ? JSON.stringify(a.resultatBrutN8n) : '');
+
+                        let statusCol = `<span class="badge badge-${a.statut}">${a.statut_display}</span>`;
+                        let progressCol = `<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div>`;
+
+                        if (a.statut === 'EN_COURS') {
+                            const currentProg = a.progression || 15;
+                            statusCol = `<span class="badge badge-EN_COURS" style="background:#3b82f6; color:#fff; font-weight:bold;">⌛ En cours...</span>`;
+                            progressCol = `
+                                <div style="min-width: 140px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:11px;">
+                                        <span style="font-weight:600; color:var(--accent);">Scan n8n en cours</span>
+                                        <span style="font-weight:bold; color:var(--accent);">${currentProg}%</span>
+                                    </div>
+                                    <div style="width:100%; background:rgba(255,255,255,0.12); border-radius:10px; height:10px; overflow:hidden; border:1px solid rgba(59,130,246,0.4);">
+                                        <div style="width:${currentProg}%; background:linear-gradient(90deg, #3b82f6, #6366f1); height:100%; border-radius:10px; transition:width 0.4s ease;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (a.statut === 'ECHOUE') {
+                            statusCol = `
+                                <div>
+                                    <span class="badge badge-DANGER" style="cursor:pointer; background:#ef4444; color:#fff;" title="${errDetails.replace(/"/g, '&quot;')}">⚠️ Échoué / Expiré</span>
+                                    <br><small style="color:#ef4444; font-size:10px; line-height:1.2; display:block; max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${errDetails.replace(/"/g, '&quot;')}">${errDetails || 'Pas de réponse n8n'}</small>
+                                </div>
+                            `;
+                            progressCol = `<div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%; background:#ef4444;"></div></div>`;
+                        }
 
                         return `
                             <tr>
@@ -2249,14 +2301,20 @@
                                     <strong>${targetVal}</strong><br>
                                     <small style="color:var(--text-muted);">${projNom}</small>
                                 </td>
-                                <td><span class="badge badge-${a.statut}">${a.statut_display}</span></td>
-                                <td><div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${a.progression}%;"></div></div></td>
+                                <td>${statusCol}</td>
+                                <td>${progressCol}</td>
                                 <td><strong>${a.scoreSecurite}/100</strong></td>
                                 <td>${actionsHtml}</td>
                             </tr>
                         `;
                     }
                 });
+
+                if (hasRunningAudits) {
+                    startGlobalAuditPolling();
+                } else {
+                    stopGlobalAuditPolling();
+                }
 
                 if (data.audits && data.audits.length > 0 && reconSelect && !reconSelect.value) {
                     reconSelect.value = data.audits[0].id;
