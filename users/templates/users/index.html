@@ -545,7 +545,7 @@
             <li class="nav-item" onclick="switchTab('roles')">Rôles & Permissions</li>
             <li class="nav-item" onclick="switchTab('users')">Gestion des Utilisateurs</li>
             <li class="nav-item" onclick="switchTab('logs')">Journal d'Activité</li>
-            <li class="nav-item" onclick="switchTab('profile')">👤 Mon Profil</li>
+            <li class="nav-item" onclick="switchTab('profile')">Mon Profil</li>
         </ul>
     </div>
 
@@ -554,17 +554,17 @@
         <!-- Top Header Datafy Style -->
                 <div class="header">
             <div style="display: flex; align-items: center;">
-                <button class="menu-toggle-btn" onclick="toggleMobileSidebar(true)" aria-label="Menu">📱 ☰</button>
+                <button class="menu-toggle-btn" onclick="toggleMobileSidebar(true)" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
                 <div class="header-title">
                     <h2 id="page-title">Vue d'ensemble</h2>
                 </div>
             </div>
             <div class="header-controls">
                 <button class="theme-toggle-btn" onclick="toggleTheme()">
-                    <span id="theme-icon">☀️</span> <span id="theme-text">Mode Jour</span>
+                    <span id="theme-icon"></span> <span id="theme-text">Mode Jour</span>
                 </button>
                 <div class="user-badge" id="logged-user-display">
-                    <span>👤 Chargement...</span>
+                    <span>Chargement...</span>
                 </div>
                 <button class="btn btn-danger" onclick="handleLogout()">Se Déconnecter</button>
             </div>
@@ -748,7 +748,7 @@
             <div id="tab-logs" class="tab-pane">
                 <div class="card" style="border-left: 4px solid #38bdf8;">
                     <div class="card-header">
-                        <h3 class="card-title">🔒 Traçabilité & Journalisation Automatique Infalsifiable</h3>
+                        <h3 class="card-title">Traçabilité & Journalisation Automatique Infalsifiable</h3>
                     </div>
                     <div style="padding: 0 20px 20px 20px; color: #94a3b8; line-height: 1.6;">
                         <p style="margin: 0;">L'ensemble des actions et opérations de l'application (connexions, déconnexions, créations de projets/cibles, démarrages d'audits, déclarations de vulnérabilités, publications de rapports, notifications) sont <strong>automatiquement journalisées en temps réel</strong> par SecEval AI. L'enregistrement et la suppression manuels des journaux sont désactivés pour garantir l'intégrité du journal de sécurité.</p>
@@ -795,7 +795,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">🔔 Configuration des Canaux Multi-Canaux en Direct (Slack, Teams, Telegram, Discord)</h3>
+                        <h3 class="card-title">Configuration des Canaux Multi-Canaux en Direct (Slack, Teams, Telegram, Discord)</h3>
                     </div>
                     <form onsubmit="saveWebhookConfig(event)">
                         <div class="form-row">
@@ -820,7 +820,7 @@
                         </div>
                         <div style="display:flex; gap:10px; align-items:center;">
                             <button type="submit" class="btn">Enregistrer la Configuration</button>
-                            <button type="button" class="btn btn-outline" onclick="testLiveWebhook('Slack / Webhook')">🧪 Envoi de Notification de Test</button>
+                            <button type="button" class="btn btn-outline" onclick="testLiveWebhook('Slack / Webhook')">Envoi de Notification de Test</button>
                         </div>
                     </form>
                 </div>
@@ -891,14 +891,14 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                         <div>
                             <h3 style="margin:0 0 6px 0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                                🛡️ Vulnérabilités Identifiées dans les Audits (Extraction Automatique)
+                                Vulnérabilités Identifiées dans les Audits (Extraction Automatique)
                             </h3>
                             <p style="margin:0; font-size:0.88rem; color:var(--text-muted);">
                                 La déclaration manuelle est désactivée. Les vulnérabilités sont automatiquement analysées, extraites et mises à jour depuis les audits de sécurité et les rapports d'évaluation n8n.
                             </p>
                         </div>
                         <button class="btn" style="white-space:nowrap;" onclick="syncVulnsFromAudits()">
-                            🔄 Analyser & Synchroniser depuis les Audits
+                            Analyser & Synchroniser depuis les Audits
                         </button>
                     </div>
                 </div>
@@ -1131,8 +1131,8 @@
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <h3 class="card-title" style="margin:0;">Campagnes d'Audits en Cours & Exécutées</h3>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn btn-outline" style="padding:6px 12px; font-size:0.85rem;" onclick="openAuditCompareModal()">📈 Analyse Comparative (Diff)</button>
-                            <a href="/api/audits/export-ical/" class="btn btn-outline" style="padding:6px 12px; font-size:0.85rem; text-decoration:none; display:inline-block;" target="_blank">📥 Exporter iCal (.ics)</a>
+                            <button class="btn btn-outline" style="padding:6px 12px; font-size:0.85rem;" onclick="openAuditCompareModal()">Analyse Comparative (Diff)</button>
+                            <a href="/api/audits/export-ical/" class="btn btn-outline" style="padding:6px 12px; font-size:0.85rem; text-decoration:none; display:inline-block;" target="_blank">Exporter iCal (.ics)</a>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -1155,8 +1155,8 @@
 
                 <div class="card">
                     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="card-title" style="margin:0;">📅 Planning Visuel & Calendrier des Audits Planifiés</h3>
-                        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.85rem;" onclick="loadCalendarData()">🔄 Rafraîchir Calendrier</button>
+                        <h3 class="card-title" style="margin:0;">Planning Visuel & Calendrier des Audits Planifiés</h3>
+                        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.85rem;" onclick="loadCalendarData()">Rafraîchir Calendrier</button>
                     </div>
                     <div id="audit-calendar-container">
                         <div style="text-align:center; padding:20px; color:var(--text-muted);">Chargement du calendrier des audits...</div>
@@ -1524,7 +1524,7 @@
 
                 <div class="card" style="max-width: 550px; margin-top: 20px;">
                     <div class="card-header">
-                        <h3 class="card-title">🎨 Personnalisation Marque Blanche (Rapports PDF & Thème)</h3>
+                        <h3 class="card-title">Personnalisation Marque Blanche (Rapports PDF & Thème)</h3>
                     </div>
                     <form onsubmit="saveWhiteLabelBranding(event)">
                         <div class="form-group">
@@ -1658,7 +1658,12 @@
 
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
-            document.getElementById('theme-icon').innerText = theme === 'dark' ? '🌙' : '☀️';
+            const iconEl = document.getElementById('theme-icon');
+            if (iconEl) {
+                iconEl.innerHTML = theme === 'dark' 
+                    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>'
+                    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+            }
             document.getElementById('theme-text').innerText = theme === 'dark' ? 'Mode Nuit' : 'Mode Jour';
             localStorage.setItem('theme', theme);
             if (window.lastScores) renderSVGScoreTrend(window.lastScores);
@@ -1764,7 +1769,7 @@
                 const res = await fetch('/api/users/profile/');
                 if (res.ok) {
                     currentUser = await res.json();
-                    document.getElementById('logged-user-display').innerHTML = `<span>👤 <strong>${currentUser.nom}</strong> (${currentUser.email})</span>`;
+                    document.getElementById('logged-user-display').innerHTML = `<span><strong>${currentUser.nom}</strong> (${currentUser.email})</span>`;
                     document.getElementById('profile-nom').value = currentUser.nom;
                     document.getElementById('profile-email').value = currentUser.email;
                 } else {
@@ -2011,8 +2016,8 @@
                                 <td><strong style="color: ${scoreColor};">${r.scoreFinal}/100</strong></td>
                                 <td><span class="badge badge-INVITE">${r.format}</span></td>
                                 <td>
-                                    <a href="${readUrl}" target="_blank" class="btn" style="padding: 4px 10px; text-decoration:none; margin-right: 4px;">👁️ Lire</a>
-                                    <a href="${downloadUrl}" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">📥 Télécharger</a>
+                                    <a href="${readUrl}" target="_blank" class="btn" style="padding: 4px 10px; text-decoration:none; margin-right: 4px;">Lire</a>
+                                    <a href="${downloadUrl}" class="btn btn-outline" style="padding: 4px 10px; text-decoration:none;">Télécharger</a>
                                 </td>
                             </tr>
                         `;
@@ -2073,7 +2078,7 @@
                                     <button class="btn btn-outline" style="padding: 4px 10px;" onclick="corrigeeVuln('${v.id}')">Corrigée</button>
                                     <button class="btn btn-outline" style="padding: 4px 10px;" onclick="fauxPositifVuln('${v.id}')">Faux Positif</button>
                                     <button class="btn btn-outline" style="padding: 4px 10px;" onclick="inspectVuln('${v.id}')">PoC / Patch</button>
-                                    <button class="btn" style="padding: 4px 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none;" onclick="openCopilotModal('${v.id}')">🤖 Copilot IA</button>
+                                    <button class="btn btn-primary" style="padding: 4px 10px;" onclick="openCopilotModal('${v.id}')">Copilot IA</button>
                                 </td>
                             </tr>
                         `;
@@ -2303,9 +2308,9 @@
                     renderRowFn: (a) => {
                         if (a.statut === 'EN_COURS') hasRunningAudits = true;
 
-                        let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">🚀 Lancer Manuellement</button>`;
-                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">📊 Résultats N8N</button>`;
-                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">📜 Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
+                        let actionsHtml = `<button class="btn" style="padding: 5px 12px; margin-right:4px;" onclick="demarrerAudit('${a.id}')">Lancer Manuellement</button>`;
+                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px; border-color:var(--accent); color:var(--accent);" onclick="viewN8nResults('${a.id}')">Résultats N8N</button>`;
+                        actionsHtml += `<button class="btn btn-outline" style="padding: 5px 12px; margin-right:4px;" onclick="viewAuditHistory('${a.id}')">Historique (${a.typePlanification === 'REPETITIVE' ? 'Récurrent' : 'Runs'})</button>`;
 
                         if (a.statut === 'EN_COURS') {
                             actionsHtml += `
@@ -2314,7 +2319,7 @@
                                 <button class="btn btn-danger" style="padding: 4px 10px;" onclick="arreterAudit('${a.id}')">Arrêter</button>
                             `;
                         } else if (a.statut === 'ECHOUE') {
-                            actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px; border-color:#ef4444; color:#ef4444;" onclick="demarrerAudit('${a.id}')">🔁 Relancer</button>`;
+                            actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px; border-color:#ef4444; color:#ef4444;" onclick="demarrerAudit('${a.id}')">Relancer</button>`;
                         }
                         actionsHtml += ` <button class="btn btn-outline" style="padding: 4px 10px;" onclick="viewAuditPlan('${a.id}')">Voir Plan</button>`;
 
@@ -2323,7 +2328,7 @@
                             : `<span class="badge badge-FAIBLE">Unique</span>`;
 
                         const heureBadge = a.heureExecution ? `<br><small style="color:var(--accent); font-weight:600;">Heure: ${a.heureExecution}</small>` : '';
-                        const webhookBadge = a.webhookN8nUrl ? `<br><span class="badge badge-INVITE" title="${a.webhookN8nUrl}">⚡ n8n Webhook</span>` : '';
+                        const webhookBadge = a.webhookN8nUrl ? `<br><span class="badge badge-INVITE" title="${a.webhookN8nUrl}">n8n Webhook</span>` : '';
                         const lastLaunchText = a.dateDernierLancement ? new Date(a.dateDernierLancement).toLocaleString() : 'Jamais lancé';
 
                         const targetVal = (a.cible && a.cible.valeur) ? a.cible.valeur : '-';
@@ -2336,7 +2341,7 @@
 
                         if (a.statut === 'EN_COURS') {
                             const currentProg = a.progression || 15;
-                            statusCol = `<span class="badge badge-EN_COURS" style="background:#3b82f6; color:#fff; font-weight:bold;">⌛ En cours...</span>`;
+                            statusCol = `<span class="badge badge-EN_COURS" style="background:#2563eb; color:#fff; font-weight:bold;">En cours...</span>`;
                             progressCol = `
                                 <div style="min-width: 140px;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:11px;">
@@ -2344,15 +2349,15 @@
                                         <span style="font-weight:bold; color:var(--accent);">${currentProg}%</span>
                                     </div>
                                     <div style="width:100%; background:rgba(255,255,255,0.12); border-radius:10px; height:10px; overflow:hidden; border:1px solid rgba(59,130,246,0.4);">
-                                        <div style="width:${currentProg}%; background:linear-gradient(90deg, #3b82f6, #6366f1); height:100%; border-radius:10px; transition:width 0.4s ease;"></div>
+                                        <div style="width:${currentProg}%; background:linear-gradient(90deg, #2563eb, #3b82f6); height:100%; border-radius:10px; transition:width 0.4s ease;"></div>
                                     </div>
                                 </div>
                             `;
                         } else if (a.statut === 'ECHOUE') {
                             statusCol = `
                                 <div>
-                                    <span class="badge badge-DANGER" style="cursor:pointer; background:#ef4444; color:#fff;" title="${errDetails.replace(/"/g, '&quot;')}">⚠️ Échoué / Expiré</span>
-                                    <br><small style="color:#ef4444; font-size:10px; line-height:1.2; display:block; max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${errDetails.replace(/"/g, '&quot;')}">${errDetails || 'Pas de réponse n8n'}</small>
+                                    <span class="badge badge-DANGER" style="cursor:pointer; background:#ef4444; color:#fff;" title="${errDetails.replace(/"/g, '&quot;')}">Échoué / Expiré</span>
+                                    <br><small style="color:#ef4444; font-size:10px; line-height:1.2; display:block; max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${errDetails.replace(/"/g, '&quot;')}">${errDetails || 'Pas de réponse n8n'}</small>`
                                 </div>
                             `;
                             progressCol = `<div class="progress-bar-container"><div class="progress-bar-fill" style="width: 0%; background:#ef4444;"></div></div>`;
@@ -2771,7 +2776,7 @@
                         <td><code>${p.code}</code></td>
                         <td>${p.description || '-'}</td>
                         <td>
-                            <button class="btn-action danger" onclick="handleDeletePermission('${p.id}', '${p.code}')" title="Supprimer la permission">🗑️ Supprimer</button>
+                            <button class="btn-action danger" onclick="handleDeletePermission('${p.id}', '${p.code}')" title="Supprimer la permission">Supprimer</button>
                         </td>
                     </tr>
                 `
@@ -2818,8 +2823,8 @@
                             <td>${role.description || '-'}</td>
                             <td>${permBadges}</td>
                             <td>
-                                <button class="btn-action" onclick='editRole(${roleJson})' title="Éditer le rôle">✏️ Éditer</button>
-                                <button class="btn-action danger" onclick="handleDeleteRole('${role.id}', '${role.nom}')" title="Supprimer le rôle">🗑️ Supprimer</button>
+                                <button class="btn-action" onclick='editRole(${roleJson})' title="Éditer le rôle">Éditer</button>
+                                <button class="btn-action danger" onclick="handleDeleteRole('${role.id}', '${role.nom}')" title="Supprimer le rôle">Supprimer</button>
                             </td>
                         </tr>
                     `;
@@ -3025,13 +3030,13 @@
                 return `
                 <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:10px; padding:16px; margin:16px 0; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                     <div style="font-weight:700; font-size:1.15rem; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
-                        📊 SCORE GLOBAL : <span style="background:var(--bg-secondary); padding:4px 12px; border-radius:6px; color:var(--text-main);">${scoreText}</span>
+                        SCORE GLOBAL : <span style="background:var(--bg-secondary); padding:4px 12px; border-radius:6px; color:var(--text-main);">${scoreText}</span>
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:0.95rem;">
-                        <span style="background:rgba(220,38,38,0.25); color:#f87171; padding:6px 12px; border-radius:6px; font-weight:600;">🔴 Critique : ${cCount}</span>
-                        <span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:6px 12px; border-radius:6px; font-weight:600;">🔴 Élevé : ${eCount}</span>
-                        <span style="background:rgba(245,158,11,0.2); color:#fde047; padding:6px 12px; border-radius:6px; font-weight:600;">🟡 Moyen : ${mCount}</span>
-                        <span style="background:rgba(34,197,94,0.2); color:#86efac; padding:6px 12px; border-radius:6px; font-weight:600;">🟢 Faible : ${fCount}</span>
+                        <span style="background:rgba(220,38,38,0.25); color:#f87171; padding:6px 12px; border-radius:6px; font-weight:600;">Critique : ${cCount}</span>
+                        <span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:6px 12px; border-radius:6px; font-weight:600;">Élevé : ${eCount}</span>
+                        <span style="background:rgba(245,158,11,0.2); color:#fde047; padding:6px 12px; border-radius:6px; font-weight:600;">Moyen : ${mCount}</span>
+                        <span style="background:rgba(34,197,94,0.2); color:#86efac; padding:6px 12px; border-radius:6px; font-weight:600;">Faible : ${fCount}</span>
                     </div>
                 </div>`;
             });
@@ -3075,14 +3080,10 @@
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/`(.*?)`/g, '<code style="background:var(--bg-tertiary); padding:2px 5px; border-radius:4px; font-family:monospace;">$1</code>');
 
-            html = html.replace(/🔴 <strong>Critique<\/strong>/g, '<span style="background:rgba(220,38,38,0.25); color:#f87171; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Critique</span>');
-            html = html.replace(/🔴 Critique/g, '<span style="background:rgba(220,38,38,0.25); color:#f87171; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Critique</span>');
-            html = html.replace(/🔴 <strong>Élevé<\/strong>/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
-            html = html.replace(/🔴 Élevé/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">🔴 Élevé</span>');
-            html = html.replace(/🟡 <strong>Moyen<\/strong>/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
-            html = html.replace(/🟡 Moyen/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">🟡 Moyen</span>');
-            html = html.replace(/🟢 <strong>Faible<\/strong>/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
-            html = html.replace(/🟢 Faible/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">🟢 Faible</span>');
+            html = html.replace(/\[CRITIQUE\]/g, '<span style="background:rgba(220,38,38,0.25); color:#f87171; padding:3px 8px; border-radius:4px; font-weight:600;">Critique</span>');
+            html = html.replace(/\[ÉLEVÉ\]/g, '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; padding:3px 8px; border-radius:4px; font-weight:600;">Élevé</span>');
+            html = html.replace(/\[MOYEN\]/g, '<span style="background:rgba(245,158,11,0.2); color:#fde047; padding:3px 8px; border-radius:4px; font-weight:600;">Moyen</span>');
+            html = html.replace(/\[FAIBLE\]/g, '<span style="background:rgba(34,197,94,0.2); color:#86efac; padding:3px 8px; border-radius:4px; font-weight:600;">Faible</span>');
 
             return html;
         }
@@ -3121,7 +3122,7 @@
 
                 container.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <a class="btn" style="padding:6px 14px; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/${audit.id}/rapport-page/" target="_blank">🔗 Ouvrir la Page Complète du Rapport (Plein Écran)</a>
+                        <a class="btn" style="padding:6px 14px; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/${audit.id}/rapport-page/" target="_blank">Ouvrir la Page Complète du Rapport (Plein Écran)</a>
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:15px; background:var(--bg-tertiary); padding:12px; border-radius:8px;">
                         <div><small style="color:var(--text-muted);">Titre Audit</small><br><strong>${audit.titre}</strong></div>
@@ -3129,11 +3130,11 @@
                         <div><small style="color:var(--text-muted);">Statut</small><br><span class="badge badge-${audit.statut}">${audit.statut_display}</span></div>
                     </div>
                     <div style="margin-bottom:15px;">
-                        <h4 style="margin-bottom:8px;">📝 Rapport & Synthèse d'Analyse IA n8n :</h4>
+                        <h4 style="margin-bottom:8px;">Rapport & Synthèse d'Analyse IA n8n :</h4>
                         <div style="background:var(--bg-secondary); border-left:4px solid var(--accent); padding:16px; border-radius:8px; font-size:0.95rem; max-height:350px; overflow-y:auto;">${formattedHtml}</div>
                     </div>
                     <div>
-                        <h4 style="margin-bottom:8px;">🔍 Payload JSON Brut Reçu de n8n (Tous les champs) :</h4>
+                        <h4 style="margin-bottom:8px;">Payload JSON Brut Reçu de n8n (Tous les champs) :</h4>
                         <pre style="background:var(--bg-tertiary); color:var(--text-main); padding:15px; border-radius:8px; overflow-x:auto; font-family:monospace; font-size:0.85rem; max-height:250px;">${jsonPretty}</pre>
                     </div>
                 `;
@@ -3168,7 +3169,7 @@
                                 <td style="padding:10px;"><span class="badge badge-${ex.statut}">${ex.statut_display}</span></td>
                                 <td style="padding:10px;"><strong>${ex.scoreSecurite}/100</strong></td>
                                 <td style="padding:10px;">
-                                    <a class="btn" style="padding:4px 10px; font-size:0.85rem; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/executions/${ex.id}/rapport-page/" target="_blank">📊 Rapport Run #${ex.num_run}</a>
+                                    <a class="btn" style="padding:4px 10px; font-size:0.85rem; text-decoration:none; color:#0f172a; font-weight:600;" href="/api/audits/executions/${ex.id}/rapport-page/" target="_blank">Rapport Run #${ex.num_run}</a>
                                 </td>
                             </tr>
                         `;
@@ -3257,15 +3258,15 @@
                     </div>
 
                     <div style="margin-bottom:15px;">
-                        <label><strong>💻 Code de Patch Recommandé par Copilot :</strong></label>
+                        <label><strong>Code de Patch Recommandé par Copilot :</strong></label>
                         <div style="position:relative; margin-top:6px;">
                             <pre style="background:#1e1e2e; color:#a6adc8; padding:15px; border-radius:8px; font-family:monospace; font-size:0.88rem; overflow-x:auto; margin:0;"><code>${safePatch}</code></pre>
-                            <button class="btn btn-outline" style="position:absolute; top:8px; right:8px; padding:4px 8px; font-size:0.8rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="copyToClipboard(\`${safePatch.replace(/`/g, '\\`')}\`)">📋 Copier</button>
+                            <button class="btn btn-outline" style="position:absolute; top:8px; right:8px; padding:4px 8px; font-size:0.8rem; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; cursor:pointer;" onclick="copyToClipboard(\`${safePatch.replace(/`/g, '\\`')}\`)">Copier</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom:15px;">
-                        <label><strong>🧪 Commande CLI de Vérification de Correction :</strong></label>
+                        <label><strong>Commande CLI de Vérification de Correction :</strong></label>
                         <div style="position:relative; margin-top:6px;">
                             <code style="display:block; background:#11111b; color:#a6e3a1; padding:12px; border-radius:6px; font-family:monospace; font-size:0.9rem; border:1px solid #313244;">${data.test_command}</code>
                         </div>
@@ -3353,13 +3354,13 @@
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
                         <div style="background:rgba(16, 185, 129, 0.08); border:1px solid rgba(16, 185, 129, 0.3); border-radius:8px; padding:15px;">
-                            <h5 style="margin-top:0; color:#10b981;">✅ Vulnérabilités Résolues (${data.vulns_corrigees.length})</h5>
+                            <h5 style="margin-top:0; color:#10b981;">Vulnérabilités Résolues (${data.vulns_corrigees.length})</h5>
                             ${data.vulns_corrigees.length === 0 ? '<small style="color:var(--text-muted);">Aucune vulnérabilité corrigée.</small>' :
                                 '<ul style="padding-left:18px; margin:5px 0; font-size:0.9rem;">' + data.vulns_corrigees.map(v => `<li><strong>${v.titre}</strong> (CVSS ${v.scoreCVSS})</li>`).join('') + '</ul>'
                             }
                         </div>
                         <div style="background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; padding:15px;">
-                            <h5 style="margin-top:0; color:#ef4444;">🚨 Nouvelles Vulnérabilités (${data.vulns_nouvelles.length})</h5>
+                            <h5 style="margin-top:0; color:#ef4444;">Nouvelles Vulnérabilités (${data.vulns_nouvelles.length})</h5>
                             ${data.vulns_nouvelles.length === 0 ? '<small style="color:var(--text-muted);">Aucune nouvelle vulnérabilité apparue.</small>' :
                                 '<ul style="padding-left:18px; margin:5px 0; font-size:0.9rem;">' + data.vulns_nouvelles.map(v => `<li><strong>${v.titre}</strong> (CVSS ${v.scoreCVSS})</li>`).join('') + '</ul>'
                             }
@@ -3367,7 +3368,7 @@
                     </div>
 
                     <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; padding:15px;">
-                        <h5 style="margin-top:0; color:var(--text-muted);">🔄 Vulnérabilités Persistantes (${data.vulns_persistantes.length})</h5>
+                        <h5 style="margin-top:0; color:var(--text-muted);">Vulnérabilités Persistantes (${data.vulns_persistantes.length})</h5>
                         ${data.vulns_persistantes.length === 0 ? '<small style="color:var(--text-muted);">Aucune vulnérabilité persistante.</small>' :
                             '<ul style="padding-left:18px; margin:5px 0; font-size:0.9rem;">' + data.vulns_persistantes.map(v => `<li>${v.titre} (CVSS ${v.scoreCVSS})</li>`).join('') + '</ul>'
                         }
@@ -3403,8 +3404,8 @@
                                 <small style="color:var(--text-muted);">${ev.frequence}</small>
                             </div>
                             <strong style="display:block; font-size:0.95rem; margin-bottom:4px;">${ev.title}</strong>
-                            <small style="color:var(--text-muted); display:block;">📅 Début : ${ev.start}</small>
-                            <small style="color:var(--text-muted); display:block;">🏁 Fin : ${ev.end}</small>
+                            <small style="color:var(--text-muted); display:block;">Début : ${ev.start}</small>
+                            <small style="color:var(--text-muted); display:block;">Fin : ${ev.end}</small>
                             <div style="margin-top:8px; font-weight:bold; font-size:0.85rem;">Score: ${ev.score}/100 | Projet: ${ev.projet}</div>
                         </div>
                     `;
@@ -3489,6 +3490,27 @@
             });
         }
 
+        // ==================== MODAL CLOSE HANDLERS ====================
+        function closeAuditHistoryModal() {
+            const m = document.getElementById('modal-audit-history');
+            if (m) m.style.display = 'none';
+        }
+
+        function closeN8nResultsModal() {
+            const m = document.getElementById('modal-n8n-results');
+            if (m) m.style.display = 'none';
+        }
+
+        function closeCopilotModal() {
+            const m = document.getElementById('modal-copilot-ia');
+            if (m) m.style.display = 'none';
+        }
+
+        function closeAuditCompareModal() {
+            const m = document.getElementById('modal-audit-compare');
+            if (m) m.style.display = 'none';
+        }
+
         // Initialize Application
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -3512,6 +3534,26 @@
                 }
             });
 
+            // Global modal backdrop click listeners
+            ['modal-n8n-results', 'modal-audit-history', 'modal-copilot-ia', 'modal-audit-compare'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('click', (e) => {
+                        if (e.target === el) el.style.display = 'none';
+                    });
+                }
+            });
+
+            // Global Escape key modal dismiss
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeAuditHistoryModal();
+                    closeN8nResultsModal();
+                    closeCopilotModal();
+                    closeAuditCompareModal();
+                }
+            });
+
             loadProfile();
             loadExecutiveDashboardStats();
             loadLogsData();
@@ -3532,8 +3574,8 @@
     <div id="modal-n8n-results" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9999; justify-content:center; align-items:center;">
         <div class="card" style="max-width: 850px; width: 90%; max-height: 85vh; overflow-y: auto; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color);">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:15px;">
-                <h3 style="margin:0;">📊 Résultats & Payload Brut n8n</h3>
-                <button class="btn btn-outline" style="padding:4px 10px; cursor:pointer;" onclick="closeN8nResultsModal()">✕ Fermer</button>
+                <h3 style="margin:0;">Résultats & Payload Brut n8n</h3>
+                <button class="btn btn-outline" style="padding:4px 12px; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; border-color:var(--border-color); color:var(--text-main);" onclick="closeN8nResultsModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Fermer</button>
             </div>
             <div id="n8n-modal-body">
                 <!-- Content dynamically injected by JS -->
@@ -3545,8 +3587,8 @@
     <div id="modal-audit-history" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9999; justify-content:center; align-items:center;">
         <div class="card" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color);">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:15px;">
-                <h3 style="margin:0;">📜 Historique des Exécutions Récurrentes</h3>
-                <button class="btn btn-outline" style="padding:4px 10px; cursor:pointer;" onclick="closeAuditHistoryModal()">✕ Fermer</button>
+                <h3 style="margin:0;">Historique des Exécutions Récurrentes</h3>
+                <button class="btn btn-outline" style="padding:4px 12px; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; border-color:var(--border-color); color:var(--text-main);" onclick="closeAuditHistoryModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Fermer</button>
             </div>
             <div id="audit-history-modal-body">
                 <!-- Content dynamically injected by JS -->
@@ -3559,10 +3601,10 @@
         <div class="card" style="max-width: 850px; width: 90%; max-height: 85vh; overflow-y: auto; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color);">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:15px;">
                 <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
-                    <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.9rem;">🤖 Gemini AI</span>
+                    <span style="background: #2563eb; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight:600;">Gemini AI</span>
                     Assistant & Copilot de Remédiation
                 </h3>
-                <button class="btn btn-outline" style="padding:4px 10px; cursor:pointer;" onclick="closeCopilotModal()">✕ Fermer</button>
+                <button class="btn btn-outline" style="padding:4px 12px; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; border-color:var(--border-color); color:var(--text-main);" onclick="closeCopilotModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Fermer</button>
             </div>
             <div id="copilot-modal-body">
                 <input type="hidden" id="copilot-vuln-id">
@@ -3570,7 +3612,7 @@
                     <label><strong>Poser une question spécifique à l'IA (optionnel) :</strong></label>
                     <div style="display:flex; gap:10px; margin-top:6px;">
                         <input type="text" id="copilot-question-input" class="form-control" placeholder="ex: Comment appliquer ce patch dans un environnement Django / Nginx ?">
-                        <button class="btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; white-space:nowrap;" onclick="askCopilotAI()">⚡ Analyser avec l'IA</button>
+                        <button class="btn btn-primary" style="white-space:nowrap;" onclick="askCopilotAI()">Analyser avec l'IA</button>
                     </div>
                 </div>
                 <div id="copilot-results-container">
@@ -3586,8 +3628,8 @@
     <div id="modal-audit-compare" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9999; justify-content:center; align-items:center;">
         <div class="card" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color);">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:15px;">
-                <h3 style="margin:0;">📈 Analyse Comparative d'Audits (Diff & Évolution)</h3>
-                <button class="btn btn-outline" style="padding:4px 10px; cursor:pointer;" onclick="closeAuditCompareModal()">✕ Fermer</button>
+                <h3 style="margin:0;">Analyse Comparative d'Audits (Diff & Évolution)</h3>
+                <button class="btn btn-outline" style="padding:4px 12px; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; border-color:var(--border-color); color:var(--text-main);" onclick="closeAuditCompareModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Fermer</button>
             </div>
             <div style="display:flex; gap:15px; margin-bottom:20px; align-items:flex-end;">
                 <div style="flex:1;">
@@ -3598,7 +3640,7 @@
                     <label><strong>Audit #2 (Évaluation Récente) :</strong></label>
                     <select id="compare-audit2-select" class="form-control" style="margin-top:5px;"></select>
                 </div>
-                <button class="btn btn-primary" onclick="runAuditComparison()" style="white-space:nowrap; height:42px;">📊 Lancer le Diff</button>
+                <button class="btn btn-primary" onclick="runAuditComparison()" style="white-space:nowrap; height:42px;">Lancer le Diff</button>
             </div>
             <div id="audit-compare-results">
                 <div style="text-align:center; padding:30px; color:var(--text-muted);">
@@ -3609,48 +3651,54 @@
     </div>
 
     <!-- CHATBOT FLOATING ACTION BUTTON -->
-    <div id="chatbot-fab" onclick="toggleChatbot()" style="position:fixed; bottom:25px; right:25px; z-index:99999; cursor:pointer; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; padding:12px 20px; border-radius:30px; box-shadow:0 8px 25px rgba(99,102,241,0.45); display:flex; align-items:center; gap:10px; font-weight:600; transition:all 0.3s ease; border: 1px solid rgba(255,255,255,0.2);">
-        <span style="font-size:1.4rem;">🤖</span>
+    <div id="chatbot-fab" onclick="toggleChatbot()" style="position:fixed; bottom:25px; right:25px; z-index:99999; cursor:pointer; background: #1e293b; color:#f8fafc; padding:10px 18px; border-radius:30px; box-shadow:0 8px 25px rgba(0,0,0,0.35); display:flex; align-items:center; gap:10px; font-weight:600; transition:all 0.3s ease; border: 1px solid #334155;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><line x1="9" y1="13" x2="9.01" y2="13"/><line x1="15" y1="13" x2="15.01" y2="13"/></svg>
         <span>Assistant IA</span>
-        <span style="background:#ef4444; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; font-weight:bold;">LIVE</span>
+        <span class="badge badge-DANGER" style="font-size:0.65rem; padding:2px 6px;">LIVE</span>
     </div>
 
     <!-- CHATBOT DRAWER PANEL -->
     <div id="chatbot-drawer" style="display:none; position:fixed; bottom:90px; right:25px; width:410px; max-width:92vw; height:580px; max-height:82vh; background:var(--card-bg, #1e293b); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:16px; box-shadow:0 15px 35px rgba(0,0,0,0.45); z-index:99999; flex-direction:column; overflow:hidden;">
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div style="background: #0f172a; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #6366f1, #8b5cf6); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🤖</div>
+                <div style="width:34px; height:34px; border-radius:50%; background:#1e293b; border:1px solid #334155; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><line x1="9" y1="13" x2="9.01" y2="13"/><line x1="15" y1="13" x2="15.01" y2="13"/></svg>
+                </div>
                 <div>
-                    <h4 style="margin:0; color:white; font-size:1rem;">SecEval AI Assistant</h4>
-                    <small style="color:#a5b4fc; font-size:0.75rem;">● En ligne • Gemini Security Core</small>
+                    <h4 style="margin:0; color:white; font-size:0.95rem; font-weight:600;">SecEval AI Assistant</h4>
+                    <small style="color:#94a3b8; font-size:0.75rem;">● En ligne • Gemini Security Core</small>
                 </div>
             </div>
-            <button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer; padding:4px 8px;">✕</button>
+            <button onclick="toggleChatbot()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:4px 8px; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
         </div>
 
         <!-- Messages area -->
         <div id="chatbot-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; font-size:0.9rem; line-height:1.5;">
             <!-- Initial AI Welcome -->
             <div style="display:flex; gap:10px; align-items:flex-start;">
-                <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                <div style="background:#1e293b; border:1px solid #334155; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><line x1="9" y1="13" x2="9.01" y2="13"/><line x1="15" y1="13" x2="15.01" y2="13"/></svg>
+                </div>
                 <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-color, #f8fafc); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:12px 14px; border-radius:12px; max-width:85%;">
                     Bonjour ! Je suis l'<strong>Assistant IA SecEval</strong>. Je peux vous guider dans la manipulation du logiciel et analyser en direct vos résultats d'audit et failles critiques.
                 </div>
             </div>
             <!-- Quick Chips -->
             <div id="chatbot-quick-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-left:38px;">
-                <button onclick="quickSendChat('Comment démarrer un audit ?')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🚀 Comment démarrer un audit ?</button>
-                <button onclick="quickSendChat('Analyse mes derniers résultats')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">📊 Analyse des résultats</button>
-                <button onclick="quickSendChat('Quelles failles sont les plus critiques ?')" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🚨 Failles critiques</button>
-                <button onclick="quickSendChat('Comment personnaliser les rapports PDF ?')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🎨 Marque Blanche PDF</button>
+                <button onclick="quickSendChat('Comment démarrer un audit ?')" style="background:rgba(37,99,235,0.12); color:#93c5fd; border:1px solid rgba(37,99,235,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">Comment démarrer un audit ?</button>
+                <button onclick="quickSendChat('Analyse mes derniers résultats')" style="background:rgba(37,99,235,0.12); color:#93c5fd; border:1px solid rgba(37,99,235,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">Analyse des résultats</button>
+                <button onclick="quickSendChat('Quelles failles sont les plus critiques ?')" style="background:rgba(239,68,68,0.12); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">Failles critiques</button>
+                <button onclick="quickSendChat('Comment personnaliser les rapports PDF ?')" style="background:rgba(37,99,235,0.12); color:#93c5fd; border:1px solid rgba(37,99,235,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">Marque Blanche PDF</button>
             </div>
         </div>
 
         <!-- Input area -->
         <div style="padding:12px; background:var(--bg-secondary, #0f172a); border-top:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; gap:8px;">
             <input type="text" id="chatbot-input" placeholder="Posez une question à l'IA..." style="flex:1; background:var(--bg-tertiary, #1e293b); color:var(--text-color, white); border:1px solid var(--border-color, rgba(255,255,255,0.15)); padding:10px 12px; border-radius:8px; font-size:0.9rem;" onkeypress="if(event.key==='Enter') sendChatbotMessage()">
-            <button onclick="sendChatbotMessage()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer;">⚡</button>
+            <button onclick="sendChatbotMessage()" class="btn btn-primary" style="padding:10px 16px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
         </div>
     </div>
 
@@ -3679,7 +3727,7 @@
 
             container.innerHTML += `
                 <div style="display:flex; justify-content:flex-end;">
-                    <div style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:white; padding:10px 14px; border-radius:12px; max-width:85%; word-break:break-word;">
+                    <div style="background:#2563eb; color:white; padding:10px 14px; border-radius:12px; max-width:85%; word-break:break-word;">
                         ${escapeHtml(msg)}
                     </div>
                 </div>
@@ -3691,7 +3739,9 @@
             const typingId = 'typing-' + Date.now();
             container.innerHTML += `
                 <div id="${typingId}" style="display:flex; gap:10px; align-items:flex-start;">
-                    <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                    <div style="background:#1e293b; border:1px solid #334155; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><line x1="9" y1="13" x2="9.01" y2="13"/><line x1="15" y1="13" x2="15.01" y2="13"/></svg>
+                    </div>
                     <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-muted); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:10px 14px; border-radius:12px;">
                         <span class="spinner" style="display:inline-block; width:12px; height:12px; margin-right:6px;"></span> L'Assistant réfléchit...
                     </div>
@@ -3713,7 +3763,7 @@
                 if (!res.ok) {
                     container.innerHTML += `
                         <div style="display:flex; gap:10px; align-items:flex-start;">
-                            <div style="background:red; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;">⚠️</div>
+                            <div style="background:#ef4444; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;">!</div>
                             <div style="background:#450a0a; color:#fca5a5; padding:10px 14px; border-radius:12px;">
                                 ${data.error || 'Erreur du serveur.'}
                             </div>
@@ -3730,13 +3780,15 @@
                 let chipsHtml = '';
                 if (data.suggested_actions && data.suggested_actions.length > 0) {
                     chipsHtml = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">' +
-                        data.suggested_actions.map(act => `<button onclick="quickSendChat('${escapeHtml(act)}')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.75rem; cursor:pointer;">${escapeHtml(act)}</button>`).join('') +
+                        data.suggested_actions.map(act => `<button onclick="quickSendChat('${escapeHtml(act)}')" style="background:rgba(37,99,235,0.12); color:#93c5fd; border:1px solid rgba(37,99,235,0.3); padding:4px 10px; border-radius:15px; font-size:0.75rem; cursor:pointer;">${escapeHtml(act)}</button>`).join('') +
                         '</div>';
                 }
 
                 container.innerHTML += `
                     <div style="display:flex; gap:10px; align-items:flex-start;">
-                        <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                        <div style="background:#1e293b; border:1px solid #334155; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><line x1="9" y1="13" x2="9.01" y2="13"/><line x1="15" y1="13" x2="15.01" y2="13"/></svg>
+                        </div>
                         <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-color, #f8fafc); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:12px 14px; border-radius:12px; max-width:85%;">
                             ${formattedReply}
                             ${chipsHtml}
