@@ -1669,6 +1669,23 @@
                     localStorage.setItem('activeTab', tabId);
                 } catch (e) {}
             }
+
+            try {
+                if (tabId === 'dashboard' && typeof loadExecutiveDashboardStats === 'function') loadExecutiveDashboardStats();
+                else if (tabId === 'projects' && typeof loadProjectsData === 'function') loadProjectsData();
+                else if (tabId === 'audits' && typeof loadAuditsData === 'function') loadAuditsData();
+                else if (tabId === 'reports' && typeof loadReportsData === 'function') loadReportsData();
+                else if (tabId === 'vulns' && typeof loadVulnsData === 'function') loadVulnsData();
+                else if (tabId === 'recon' && typeof loadReconForSelectedAudit === 'function') loadReconForSelectedAudit();
+                else if (tabId === 'notifs' && typeof loadNotificationsData === 'function') loadNotificationsData();
+                else if (tabId === 'members' && typeof loadMembers === 'function') loadMembers();
+                else if (tabId === 'roles' && typeof loadRolesAndPermissions === 'function') loadRolesAndPermissions();
+                else if (tabId === 'users' && typeof loadUsersData === 'function') loadUsersData();
+                else if (tabId === 'logs' && typeof loadLogsData === 'function') loadLogsData();
+                else if (tabId === 'profile' && typeof loadProfile === 'function') loadProfile();
+            } catch (err) {
+                console.error('Error refreshing tab data:', err);
+            }
         }
 
         async function loadProfile() {
@@ -2349,6 +2366,15 @@
             try {
                 const res = await fetch('/api/projects/');
                 const data = await res.json();
+                const projects = data.projects || [];
+
+                renderPaginatedTable({
+                    tableBodyId: 'projects-table-body',
+                    items: projects,
+                    pageSize: 10,
+                    emptyMessage: 'Aucun projet enregistré.',
+                    renderRowFn: (p) => `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`
+                });
 
                 const projSelect = document.getElementById('cible-proj-select');
                 const auditProjSelect = document.getElementById('audit-proj-select');
@@ -2360,27 +2386,21 @@
                 if (memberProjSelect) memberProjSelect.innerHTML = '<option value="">-- (Optionnel) Sélectionner un projet --</option>';
                 if (authCibleSelect) authCibleSelect.innerHTML = '<option value="">-- Choisir une cible --</option>';
 
-                for (const p of (data.projects || [])) {
+                for (const p of projects) {
                     if (projSelect) projSelect.innerHTML += `<option value="${p.id}">${p.nom} (${p.organisation})</option>`;
                     if (auditProjSelect) auditProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
                     if (memberProjSelect) memberProjSelect.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
 
-                    const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
-                    if (ciblesRes.ok) {
-                        const ciblesData = await ciblesRes.json();
-                        (ciblesData.cibles || []).forEach(c => {
-                            if (authCibleSelect) authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
-                        });
-                    }
+                    try {
+                        const ciblesRes = await fetch(`/api/projects/${p.id}/cibles/`);
+                        if (ciblesRes.ok) {
+                            const ciblesData = await ciblesRes.json();
+                            (ciblesData.cibles || []).forEach(c => {
+                                if (authCibleSelect) authCibleSelect.innerHTML += `<option value="${c.id}">${c.valeur} (${p.nom})</option>`;
+                            });
+                        }
+                    } catch (ce) {}
                 }
-
-                renderPaginatedTable({
-                    tableBodyId: 'projects-table-body',
-                    items: data.projects || [],
-                    pageSize: 10,
-                    emptyMessage: 'Aucun projet enregistré.',
-                    renderRowFn: (p) => `<tr><td><strong>${p.nom}</strong></td><td>${p.organisation}</td><td><span class="badge badge-${p.statut}">${p.statut_display}</span></td><td>${p.cibles_count} cible(s)</td><td>${p.statut !== 'ARCHIVE' ? `<button class="btn btn-outline" style="padding: 4px 10px;" onclick="archiveProject('${p.id}')">Archiver</button>` : ''}</td></tr>`
-                });
             } catch(e) { console.error(e); }
         }
 
@@ -2496,9 +2516,9 @@
                     pageSize: 10,
                     emptyMessage: 'Aucun utilisateur enregistré.',
                     renderRowFn: (user) => {
-                        let roleOptionsHtml = '<option value="">-- Choisir / Modifier Rôle --</option>';
+                        const userRoles = Array.isArray(user.roles) ? user.roles : [];
                         rolesList.forEach(r => {
-                            const isSelected = user.roles.includes(r.nom);
+                            const isSelected = userRoles.includes(r.nom);
                             roleOptionsHtml += `<option value="${r.id}" ${isSelected ? 'selected' : ''}>${r.nom}</option>`;
                         });
 
