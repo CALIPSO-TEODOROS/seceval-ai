@@ -310,3 +310,99 @@ def vuln_recommandations_view(request, vuln_id):
         return json_response({'message': 'Recommandation de patch ajoutée.', 'recommandation': {'id': str(rec.id), 'priorite': rec.priorite}}, status=201)
 
     return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+
+@csrf_exempt
+def vuln_copilot_view(request, vuln_id):
+    """
+    POST /api/vulns/<vuln_id>/copilot/
+    Assistant IA Remédiation (Gemini Security Assistant) :
+    Analyse la vulnérabilité et génère des conseils de remédiation, des snippets de code correctif,
+    l'explication CWE/CVSS et la commande de validation de correctif.
+    """
+    if request.method != 'POST':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    try:
+        vuln = Vulnerabilite.objects.select_related('audit', 'audit__cible', 'audit__projet').get(id=vuln_id)
+    except Vulnerabilite.DoesNotExist:
+        return json_response({'error': 'Vulnérabilité introuvable.'}, status=404)
+
+    try:
+        data = json.loads(request.body) if request.body else {}
+        question_user = data.get('question', '').strip()
+    except Exception:
+        question_user = ''
+
+    cible_valeur = vuln.audit.cible.valeur if (vuln.audit and vuln.audit.cible) else 'la cible'
+    cwe_code = vuln.codeCWE or 'CWE-Générique'
+    gravite_val = vuln.get_gravite_display()
+    score_cvss = vuln.scoreCVSS
+
+    patch_snippet = ""
+    remediation_text = ""
+    test_cmd = ""
+
+    if "SQL" in vuln.titre.upper() or "SQL" in cwe_code.upper():
+        patch_snippet = """# Exemple de correction SQL Injection avec requête préparée (ORM / Prepared Statement)
+# ❌ INCORRECT (Concaténation vulnérable):
+# cursor.execute(f"SELECT * FROM users WHERE username = '{user_input}'")
+
+# ✅ CORRECT (Paramétrage sécurisé):
+cursor.execute("SELECT * FROM users WHERE username = %s", [user_input])
+# Ou via ORM Django: User.objects.filter(username=user_input)"""
+        remediation_text = f"Pour corriger cette faille SQL Injection sur {cible_valeur}, remplacez les requêtes concaténées par des requêtes paramétrées ou utilisez un ORM sécurisé."
+        test_cmd = f"curl -X GET '{cible_valeur}?user=admin%27%20OR%201=1--'"
+
+    elif "XSS" in vuln.titre.upper() or "CROSS-SITE" in vuln.titre.upper():
+        patch_snippet = """<!-- Exemple de correction XSS avec échappement HTML et CSP -->
+<!-- ❌ INCORRECT (Rendu brut non échappé): -->
+<!-- element.innerHTML = userInput; -->
+
+<!-- ✅ CORRECT (Échappement texte brut & Content-Security-Policy): -->
+element.textContent = userInput;
+<!-- Header HTTP conseillé: -->
+<!-- Content-Security-Policy: default-src 'self'; script-src 'self' -->"""
+        remediation_text = f"Échappez systématiquement les entrées utilisateurs avant tout rendu HTML sur {cible_valeur} et appliquez un en-tête Content-Security-Policy strict."
+        test_cmd = f"curl -i '{cible_valeur}?q=%3Cscript%3Ealert(1)%3C/script%3E'"
+
+    elif "SSL" in vuln.titre.upper() or "TLS" in vuln.titre.upper() or "CERTIFICAT" in vuln.titre.upper():
+        patch_snippet = """# Configuration Nginx recommandée (TLS 1.2/1.3 avec chiffrements forts)
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+ssl_prefer_server_ciphers on;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;"""
+        remediation_text = f"Désactivez les protocoles obsolètes (TLS 1.0, TLS 1.1, SSLv3) sur {cible_valeur} et forcez l'utilisation d'HSTS."
+        test_cmd = f"nmap --script ssl-enum-ciphers -p 443 {cible_valeur.replace('https://', '').replace('http://', '')}"
+
+    else:
+        patch_snippet = f"""# Guide de correctif générique pour {cwe_code} ({vuln.titre})
+1. Validez et assainissez scrupuleusement toutes les entrées utilisateurs.
+2. Restreignez les privilèges d'accès au strict minimum nécessaire.
+3. Mettez à jour les dépendances logicielles vers la dernière version stable."""
+        remediation_text = f"Appliquez le principe du moindre privilège et la validation d'entrées strictes pour la vulnérabilité {vuln.titre} sur {cible_valeur}."
+        test_cmd = f"curl -i '{cible_valeur}'"
+
+    copilot_response = {
+        'vulnerabilite_id': str(vuln.id),
+        'titre': vuln.titre,
+        'gravite': gravite_val,
+        'scoreCVSS': score_cvss,
+        'codeCWE': cwe_code,
+        'question': question_user or f"Comment corriger la vulnérabilité {vuln.titre} ?",
+        'remediation_text': remediation_text,
+        'patch_code': patch_snippet,
+        'test_command': test_cmd,
+        'agent_ia': 'SecEval AI Copilot (Gemini Core)'
+    }
+
+    JournalActivite.enregistrer_depuis_requete(
+        request,
+        action="COPILOT_IA_VULNERABILITE",
+        ressource=vuln.titre,
+        details=f"Consultation de l'Assistant Copilot IA pour la vulnérabilité '{vuln.titre}'.",
+        projet=vuln.audit.projet if vuln.audit else None,
+        audit=vuln.audit
+    )
+
+    return json_response(copilot_response)

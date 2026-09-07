@@ -777,3 +777,162 @@ def audit_rapport_page_view(request, audit_id):
         })
     except Audit.DoesNotExist:
         return json_response({'error': 'Audit introuvable.'}, status=404)
+
+
+@csrf_exempt
+def audit_comparer_view(request):
+    """
+    GET /api/audits/compare/?audit1=<id>&audit2=<id>
+    Analyse comparative entre deux audits : calcul du delta de score, des vulnérabilités résolues,
+    des nouvelles vulnérabilités et des vulnérabilités persistantes.
+    """
+    if request.method != 'GET':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    id1 = request.GET.get('audit1')
+    id2 = request.GET.get('audit2')
+
+    if not id1 or not id2:
+        audits_completed = Audit.objects.filter(statut=StatutAudit.TERMINE).order_by('-dateFin')[:2]
+        if len(audits_completed) >= 2:
+            audit2_obj, audit1_obj = audits_completed[0], audits_completed[1]
+        elif len(audits_completed) == 1:
+            audit2_obj = audits_completed[0]
+            audit1_obj = Audit.objects.exclude(id=audit2_obj.id).first()
+        else:
+            audit1_obj = Audit.objects.first()
+            audit2_obj = Audit.objects.last()
+    else:
+        try:
+            audit1_obj = Audit.objects.get(id=id1)
+            audit2_obj = Audit.objects.get(id=id2)
+        except Audit.DoesNotExist:
+            return json_response({'error': 'Un ou plusieurs audits introuvables.'}, status=404)
+
+    if not audit1_obj or not audit2_obj:
+        return json_response({'error': 'Impossible d\'effectuer une comparaison avec moins de 2 audits en base.'}, status=400)
+
+    from vulns.models import Vulnerabilite
+    vulns1 = list(Vulnerabilite.objects.filter(audit=audit1_obj))
+    vulns2 = list(Vulnerabilite.objects.filter(audit=audit2_obj))
+
+    titles1 = {v.titre.lower().strip(): v for v in vulns1}
+    titles2 = {v.titre.lower().strip(): v for v in vulns2}
+
+    vulns_fixed = [
+        {'id': str(v.id), 'titre': v.titre, 'gravite': v.gravite, 'scoreCVSS': v.scoreCVSS}
+        for k, v in titles1.items() if k not in titles2
+    ]
+
+    vulns_new = [
+        {'id': str(v.id), 'titre': v.titre, 'gravite': v.gravite, 'scoreCVSS': v.scoreCVSS}
+        for k, v in titles2.items() if k not in titles1
+    ]
+
+    vulns_persistent = [
+        {'id': str(v.id), 'titre': v.titre, 'gravite': v.gravite, 'scoreCVSS': v.scoreCVSS}
+        for k, v in titles2.items() if k in titles1
+    ]
+
+    score_delta = round(audit2_obj.scoreSecurite - audit1_obj.scoreSecurite, 1)
+
+    return json_response({
+        'audit1': {
+            'id': str(audit1_obj.id),
+            'titre': audit1_obj.titre or f"Audit {audit1_obj.get_type_display()} - {audit1_obj.cible.valeur}",
+            'scoreSecurite': round(audit1_obj.scoreSecurite, 1),
+            'dateFin': audit1_obj.dateFin.isoformat() if audit1_obj.dateFin else None,
+            'total_vulns': len(vulns1)
+        },
+        'audit2': {
+            'id': str(audit2_obj.id),
+            'titre': audit2_obj.titre or f"Audit {audit2_obj.get_type_display()} - {audit2_obj.cible.valeur}",
+            'scoreSecurite': round(audit2_obj.scoreSecurite, 1),
+            'dateFin': audit2_obj.dateFin.isoformat() if audit2_obj.dateFin else None,
+            'total_vulns': len(vulns2)
+        },
+        'score_delta': score_delta,
+        'evolution': 'AMELIORATION' if score_delta > 0 else ('DEGRADATION' if score_delta < 0 else 'STABLE'),
+        'vulns_corrigees': vulns_fixed,
+        'vulns_nouvelles': vulns_new,
+        'vulns_persistantes': vulns_persistent,
+        'resume': f"Le score de sécurité est passé de {round(audit1_obj.scoreSecurite, 1)}/100 à {round(audit2_obj.scoreSecurite, 1)}/100 ({'+' if score_delta >= 0 else ''}{score_delta} pts). {len(vulns_fixed)} vulnérabilité(s) corrigée(s), {len(vulns_new)} nouvelle(s)."
+    })
+
+
+@csrf_exempt
+def audit_calendar_view(request):
+    """
+    GET /api/audits/calendar/
+    Retourne la liste complète des évènements d'audits passés, en cours et futurs programmés.
+    """
+    if request.method != 'GET':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    audits = Audit.objects.select_related('projet', 'cible').all().order_by('dateCreation')
+    events = []
+
+    for a in audits:
+        start_date = a.dateDebut or a.dateDernierLancement or a.dateCreation
+        color = '#10b981' if a.statut == StatutAudit.TERMINE else ('#3b82f6' if a.statut == StatutAudit.EN_COURS else ('#ef4444' if a.statut == StatutAudit.ECHOUE else '#f59e0b'))
+
+        events.append({
+            'id': str(a.id),
+            'title': f"[{a.get_type_display()}] {a.cible.valeur}",
+            'start': start_date.strftime('%Y-%m-%d %H:%M'),
+            'end': a.dateFin.strftime('%Y-%m-%d %H:%M') if a.dateFin else start_date.strftime('%Y-%m-%d %H:%M'),
+            'statut': a.statut,
+            'statut_display': a.get_statut_display(),
+            'score': round(a.scoreSecurite, 1),
+            'color': color,
+            'projet': a.projet.nom,
+            'frequence': a.get_frequence_display()
+        })
+
+    return json_response({'events': events, 'total': len(events)})
+
+
+@csrf_exempt
+def audit_export_ical_view(request):
+    """
+    GET /api/audits/export-ical/
+    Génère et télécharge un fichier .ics (iCalendar) compatible Outlook, Google Calendar & Apple Calendar.
+    """
+    from django.http import HttpResponse
+
+    audits = Audit.objects.select_related('projet', 'cible').all().order_by('dateCreation')
+
+    ical_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//SecEval AI//Audit Calendar 1.0//FR",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:SecEval AI - Audits de Sécurité"
+    ]
+
+    for a in audits:
+        dt = a.dateDebut or a.dateDernierLancement or a.dateCreation
+        dt_str = dt.strftime('%Y%m%dT%H%M%SZ')
+        dt_end_str = (a.dateFin or dt).strftime('%Y%m%dT%H%M%SZ')
+        summary = f"Audit {a.get_type_display()} - {a.cible.valeur}"
+        description = f"Statut: {a.get_statut_display()}\\nProjet: {a.projet.nom}\\nScore: {round(a.scoreSecurite, 1)}/100\\nLien: https://secu.zendaya.tech/"
+
+        ical_lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:audit-{a.id}@secu.zendaya.tech",
+            f"DTSTAMP:{dt_str}",
+            f"DTSTART:{dt_str}",
+            f"DTEND:{dt_end_str}",
+            f"SUMMARY:{summary}",
+            f"DESCRIPTION:{description}",
+            "STATUS:CONFIRMED",
+            "END:VEVENT"
+        ])
+
+    ical_lines.append("END:VCALENDAR")
+    content = "\r\n".join(ical_lines)
+
+    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="sec-eval-audits-calendar.ics"'
+    return response

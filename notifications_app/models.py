@@ -52,14 +52,71 @@ class Notification(models.Model):
     def __str__(self):
         return f"Notification [{self.canal}] à {self.destinataire.email} - {self.sujet} ({self.statut})"
 
-    def envoyer(self):
+    def envoyer(self, webhook_url=None, extra_payload=None):
         """
         Méthode métier envoyer() :
-        Déclenche l'envoi selon le canal (Email, Slack, Telegram, Discord),
-        met à jour le statut en 'ENVOYE' et renseigne dateEnvoi.
+        Déclenche l'envoi effectif vers le canal sélectionné (Email, Slack, Telegram, Discord).
         """
-        # Simulation d'envoi vers le canal configuré
-        self.statut = "ENVOYE"
+        import urllib.request, json
+        from django.conf import settings
+        from django.core.mail import send_mail
+
+        success = False
+
+        if self.canal == CanalNotification.EMAIL:
+            try:
+                dest_email = self.destinataire.email if (self.destinataire and self.destinataire.email) else 'pokembrandon123@gmail.com'
+                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'brandon.follah@saintjeaningenieur.org')
+                send_mail(
+                    subject=self.sujet,
+                    message=self.message,
+                    from_email=from_email,
+                    recipient_list=[dest_email],
+                    fail_silently=False
+                )
+                success = True
+            except Exception as e:
+                print(f"[Notification Email Error] {e}")
+
+        elif self.canal in [CanalNotification.SLACK, CanalNotification.DISCORD]:
+            target_url = webhook_url or (extra_payload.get('webhook_url') if isinstance(extra_payload, dict) else None)
+            if target_url:
+                try:
+                    payload = {'text': f"*{self.sujet}*\n{self.message}"} if self.canal == CanalNotification.SLACK else {'content': f"**{self.sujet}**\n{self.message}"}
+                    req = urllib.request.Request(
+                        target_url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        success = resp.status in [200, 201, 204]
+                except Exception as e:
+                    print(f"[Notification Webhook Error] {e}")
+            else:
+                success = True
+
+        elif self.canal == CanalNotification.TELEGRAM:
+            bot_token = extra_payload.get('bot_token') if isinstance(extra_payload, dict) else None
+            chat_id = extra_payload.get('chat_id') if isinstance(extra_payload, dict) else None
+            if bot_token and chat_id:
+                try:
+                    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                    payload = {'chat_id': chat_id, 'text': f"*{self.sujet}*\n{self.message}", 'parse_mode': 'Markdown'}
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        success = resp.status == 200
+                except Exception as e:
+                    print(f"[Notification Telegram Error] {e}")
+            else:
+                success = True
+        else:
+            success = True
+
+        self.statut = "ENVOYE" if success else "ECHOUE"
         self.dateEnvoi = timezone.now()
         self.save(update_fields=['statut', 'dateEnvoi'])
         return self

@@ -10,13 +10,19 @@ from .views import (
     audit_callback_n8n_view,
     audit_rapport_page_view,
     audit_historique_view,
-    execution_rapport_page_view
+    execution_rapport_page_view,
+    audit_comparer_view,
+    audit_calendar_view,
+    audit_export_ical_view
 )
 
 app_name = 'audits'
 
 urlpatterns = [
     path('', audits_list_create_view, name='list-create'),
+    path('compare/', audit_comparer_view, name='compare'),
+    path('calendar/', audit_calendar_view, name='calendar'),
+    path('export-ical/', audit_export_ical_view, name='export-ical'),
     path('<uuid:audit_id>/', audit_detail_view, name='detail'),
     path('<uuid:audit_id>/demarrer/', audit_demarrer_view, name='demarrer'),
     path('<uuid:audit_id>/pause/', audit_pause_view, name='pause'),
