@@ -420,15 +420,15 @@ def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
         raw_list = audit.emailsNotification.replace(';', ',').split(',')
         recipients = [e.strip() for e in raw_list if e.strip()]
 
-    if not recipients and audit.lancePar and audit.lancePar.email:
+    if not recipients and audit.lancePar and audit.lancePar.email and '@seceval.io' not in audit.lancePar.email:
         recipients = [audit.lancePar.email]
 
     if not recipients:
-        first_user = Utilisateur.objects.first()
-        if first_user and first_user.email:
-            recipients = [first_user.email]
+        admin_user = Utilisateur.objects.filter(is_superuser=True).first()
+        if admin_user and admin_user.email and '@seceval.io' not in admin_user.email:
+            recipients = [admin_user.email]
         else:
-            recipients = [getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech')]
+            recipients = ['pokembrandon123@gmail.com']
 
     titre_audit = audit.titre or f"Audit {audit.get_type_display()} - {audit.cible.valeur}"
     subject = f"[SecEval AI] Notification d'audit terminé : {titre_audit}"

@@ -1,3 +1,10 @@
+# ==============================================================================
+# SEC-EVAL AI - MODULE USERS (MODÈLES DE DONNÉES UTILISATEURS & PERMISSIONS)
+# ==============================================================================
+# Ce fichier définit la structure de données pour les utilisateurs, les rôles,
+# les permissions système et l'affectation des membres aux projets de sécurité.
+# ==============================================================================
+
 import uuid
 from django.db import models
 from django.utils import timezone
@@ -9,6 +16,14 @@ from django.contrib.auth.models import (
 
 
 class StatutUtilisateur(models.TextChoices):
+    """
+    Énumération des statuts possibles pour un compte utilisateur dans la plateforme.
+    - INVITE : Compte nouvellement créé en attente de validation.
+    - ACTIF : Compte pleinement opérationnel et autorisé à se connecter.
+    - SUSPENDU : Compte temporairement restreint.
+    - BLOQUE : Compte verrouillé suite à des échecs de sécurité.
+    - DESACTIVE : Compte désactivé par l'administrateur.
+    """
     INVITE = 'INVITE', 'Invité'
     ACTIF = 'ACTIF', 'Actif'
     SUSPENDU = 'SUSPENDU', 'Suspendu'
@@ -17,9 +32,13 @@ class StatutUtilisateur(models.TextChoices):
 
 
 class Permission(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=100, unique=True, verbose_name="Code")
-    description = models.TextField(blank=True, default="", verbose_name="Description")
+    """
+    Modèle représentant une permission système atomique (ex: PERM_USER_MANAGE, PERM_SCAN_CREATE).
+    Chaque permission identifie une capacité d'action spécifique sur la plateforme.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # Identifiant unique UUIDv4
+    code = models.CharField(max_length=100, unique=True, verbose_name="Code")   # Code unique de la permission
+    description = models.TextField(blank=True, default="", verbose_name="Description") # Explication du rôle de la permission
 
     class Meta:
         verbose_name = "Permission"
@@ -31,15 +50,19 @@ class Permission(models.Model):
 
 
 class Role(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nom = models.CharField(max_length=100, unique=True, verbose_name="Nom")
-    description = models.TextField(blank=True, default="", verbose_name="Description")
+    """
+    Modèle représentant un Rôle Système (ex: Administrateur, Auditeur Sécurité, Lecteur).
+    Un rôle regroupe un ensemble de permissions système réutilisables.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # Identifiant unique UUIDv4
+    nom = models.CharField(max_length=100, unique=True, verbose_name="Nom")       # Intitulé du rôle
+    description = models.TextField(blank=True, default="", verbose_name="Description") # Description du périmètre d'action du rôle
     permissions = models.ManyToManyField(
         Permission,
         related_name="roles",
         blank=True,
         verbose_name="Permissions"
-    )
+    ) # Association Many-to-Many avec les permissions système
 
     class Meta:
         verbose_name = "Rôle"
@@ -51,7 +74,11 @@ class Role(models.Model):
 
 
 class UtilisateurManager(BaseUserManager):
+    """
+    Gestionnaire personnalisée des comptes Utilisateur (remplace le UserManager natif de Django).
+    """
     def create_user(self, email, nom, password=None, **extra_fields):
+        """Crée et enregistre un utilisateur standard avec adresse email normalisée."""
         if not email:
             raise ValueError("L'adresse email est obligatoire.")
         if not nom:
@@ -60,13 +87,14 @@ class UtilisateurManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, nom=nom, **extra_fields)
         if password:
-            user.set_password(password)
+            user.set_password(password) # Hashage sécurisé du mot de passe avec PBKDF2
         else:
             user.set_unusable_password()
         user.save(using=self._db)
         return user
 
     def create_superuser(self, email, nom, password=None, **extra_fields):
+        """Crée et enregistre un super-utilisateur (administrateur principal)."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('statut', StatutUtilisateur.ACTIF)
@@ -80,32 +108,36 @@ class UtilisateurManager(BaseUserManager):
 
 
 class Utilisateur(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nom = models.CharField(max_length=255, verbose_name="Nom")
-    email = models.EmailField(unique=True, verbose_name="Email")
+    """
+    Modèle d'Utilisateur Personnalisé héritant de AbstractBaseUser.
+    Utilise l'adresse email comme identifiant de connexion principal (USERNAME_FIELD).
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # Identifiant unique UUIDv4
+    nom = models.CharField(max_length=255, verbose_name="Nom")                  # Nom complet ou pseudo de l'utilisateur
+    email = models.EmailField(unique=True, verbose_name="Email")                # Adresse email unique de connexion
     statut = models.CharField(
         max_length=20,
         choices=StatutUtilisateur.choices,
         default=StatutUtilisateur.ACTIF,
         verbose_name="Statut"
-    )
-    dateCreation = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
-    derniereConnexion = models.DateTimeField(null=True, blank=True, verbose_name="Dernière connexion")
+    ) # Statut du compte (ACTIF par défaut)
+    dateCreation = models.DateTimeField(auto_now_add=True, verbose_name="Date de création") # Horodatage de création
+    derniereConnexion = models.DateTimeField(null=True, blank=True, verbose_name="Dernière connexion") # Horodatage de dernière connexion
 
     roles = models.ManyToManyField(
         Role,
         related_name="utilisateurs",
         blank=True,
         verbose_name="Rôles"
-    )
+    ) # Rôles attribués à l'utilisateur
 
     is_staff = models.BooleanField(default=False, verbose_name="Accès administration")
     is_superuser = models.BooleanField(default=False, verbose_name="Super-utilisateur")
 
     objects = UtilisateurManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['nom']
+    USERNAME_FIELD = 'email'     # Identifiant de connexion principal
+    REQUIRED_FIELDS = ['nom']    # Champs requis lors de la création d'un superuser
 
     class Meta:
         verbose_name = "Utilisateur"
@@ -117,21 +149,22 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     @property
     def motDePasseHash(self):
-        """Getter pour motDePasseHash (correspond au hash de password dans Django)."""
+        """Propriété retournant le hash PBKDF2 du mot de passe."""
         return self.password
 
     @motDePasseHash.setter
     def motDePasseHash(self, raw_password):
-        """Setter pour hasher et définir le mot de passe."""
+        """Définit et hashe le mot de passe brut."""
         self.set_password(raw_password)
 
     @property
     def is_active(self):
-        """Compatibilité authentification Django : actif si statut est ACTIF."""
+        """Retourne True si le compte est au statut ACTIF pour l'authentification Django."""
         return self.statut == StatutUtilisateur.ACTIF
 
     @is_active.setter
     def is_active(self, value):
+        """Met à jour le statut en fonction du booléen is_active."""
         if value:
             self.statut = StatutUtilisateur.ACTIF
         else:
@@ -139,10 +172,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
                 self.statut = StatutUtilisateur.DESACTIVE
 
     def seConnecter(self, mot_de_passe):
-        """
-        Authentifie l'utilisateur avec son mot de passe.
-        Met à jour la date de dernière connexion si l'authentification réussit et que le statut est ACTIF.
-        """
+        """Méthode métier pour valider le mot de passe et mettre à jour la date de dernière connexion."""
         if self.statut != StatutUtilisateur.ACTIF:
             return False, f"Impossible de se connecter : statut utilisateur '{self.get_statut_display()}'."
 
@@ -154,15 +184,11 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         return False, "Mot de passe incorrect."
 
     def seDeconnecter(self):
-        """
-        Gère la déconnexion de l'utilisateur.
-        """
+        """Méthode métier pour enregistrer la déconnexion."""
         return True, "Déconnexion réussie."
 
     def modifierProfil(self, nom=None, email=None, password=None):
-        """
-        Permet de modifier le profil utilisateur (nom, email, mot de passe).
-        """
+        """Permet de mettre à jour dynamiquement les informations du profil utilisateur."""
         fields_to_update = []
         if nom is not None and nom.strip() != "":
             self.nom = nom.strip()
@@ -183,6 +209,9 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
 
 class MembreProjet(models.Model):
+    """
+    Modèle d'affectation d'un utilisateur à un projet de sécurité spécifique.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     utilisateur = models.ForeignKey(
         Utilisateur,
@@ -200,7 +229,6 @@ class MembreProjet(models.Model):
     )
     dateAffectation = models.DateTimeField(auto_now_add=True, verbose_name="Date d'affectation")
     actif = models.BooleanField(default=True, verbose_name="Actif")
-
 
     class Meta:
         verbose_name = "Membre de Projet"
