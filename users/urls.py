@@ -14,7 +14,8 @@ from .views import (
     members_list_view,
     web_ui_view,
     login_page_view,
-    dashboard_stats_view
+    dashboard_stats_view,
+    chatbot_assistant_view
 )
 
 app_name = 'users'
@@ -23,6 +24,7 @@ urlpatterns = [
     path('web/', web_ui_view, name='web-ui'),
     path('web/login/', login_page_view, name='login-page'),
     path('dashboard/stats/', dashboard_stats_view, name='dashboard-stats'),
+    path('chatbot/', chatbot_assistant_view, name='chatbot-assistant'),
     path('register/', register_view, name='register'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),

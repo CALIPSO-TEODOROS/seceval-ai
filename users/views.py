@@ -636,3 +636,147 @@ def dashboard_stats_view(request):
         'trend_scores': trend_scores
     })
 
+
+@csrf_exempt
+def chatbot_assistant_view(request):
+    """
+    POST /api/users/chatbot/
+    Assistant IA Chatbot conversationnel interactif.
+    Aide l'utilisateur à naviguer/manipuler la plateforme et répond aux questions sur les résultats d'analyse et les vulnérabilités.
+    """
+    if request.method != 'POST':
+        return json_response({'error': 'Méthode non autorisée.'}, status=405)
+
+    try:
+        data = json.loads(request.body) if request.body else {}
+        user_msg = data.get('message', '').strip()
+    except Exception:
+        user_msg = ''
+
+    if not user_msg:
+        return json_response({'error': 'Le message utilisateur est vide.'}, status=400)
+
+    from projects.models import Projet
+    from audits.models import Audit, StatutAudit
+    from vulns.models import Vulnerabilite, Gravite
+    from django.db.models import Avg
+
+    # Context collection
+    audits = Audit.objects.select_related('cible', 'projet').all().order_by('-dateCreation')
+    audits_count = audits.count()
+    audits_completed = audits.filter(statut=StatutAudit.TERMINE).count()
+    audits_running = audits.filter(statut=StatutAudit.EN_COURS).count()
+    score_avg = audits.aggregate(Avg('scoreSecurite'))['scoreSecurite__avg'] or 100.0
+
+    vulns = Vulnerabilite.objects.select_related('audit', 'audit__cible').all().order_by('-scoreCVSS')
+    vulns_total = vulns.count()
+    vulns_critique = vulns.filter(gravite=Gravite.CRITIQUE)
+    vulns_elevee = vulns.filter(gravite=Gravite.ELEVEE)
+
+    user_msg_lower = user_msg.lower()
+    reply = ""
+    suggested_actions = []
+    target_tab = None
+
+    if any(k in user_msg_lower for k in ['démarrer', 'demarrer', 'lancer', 'créer audit', 'creer audit', 'nouveau scan', 'nouveaux audits']):
+        reply = (
+            "🚀 **Comment lancer un nouvel audit de sécurité :**\n\n"
+            "1. Rendez-vous dans l'onglet **Audits** (`#tab-audits`).\n"
+            "2. Remplissez le formulaire **Lancer / Planifier un Audit** :\n"
+            "   - Saisissez un **Titre** (ex: *Pentest OWASP Top 10*).\n"
+            "   - Choisissez le **Type d'audit** (*Standard*, *Approfondi*, *API*, *SSL/TLS*).\n"
+            "   - Sélectionnez le **Projet** et la **Cible** associée.\n"
+            "   - Choisissez la **Planification** (Ponctuelle ou Récurrente).\n"
+            "3. Cliquez sur **Créer & Exécuter l'Audit**.\n\n"
+            "⚡ L'agent IA et le workflow n8n s'exécuteront automatiquement avec suivi de la barre de chargement en direct."
+        )
+        suggested_actions = ["🚀 Ouvrir l'onglet Audits", "📊 Comparer 2 Audits", "📥 Exporter iCal"]
+        target_tab = "audits"
+
+    elif any(k in user_msg_lower for k in ['résultat', 'resultat', 'score', 'moyenne', 'statistique', 'kpi', 'analyse', 'évaluation']):
+        latest_audit = audits.first()
+        latest_info = f"Le dernier audit enregistré est **'{latest_audit.titre or latest_audit.cible.valeur}'** avec un score de **{round(latest_audit.scoreSecurite, 1)}/100**." if latest_audit else "Aucun audit n'a encore été exécuté."
+
+        reply = (
+            f"📊 **Synthèse des Résultats d'Analyse SecEval AI :**\n\n"
+            f"• **Score moyen de sécurité global** : `{round(score_avg, 1)}/100`\n"
+            f"• **Campagnes d'audits au total** : `{audits_count}` (dont `{audits_completed}` terminés et `{audits_running}` en cours)\n"
+            f"• **Nombre total de vulnérabilités** : `{vulns_total}` (`{vulns_critique.count()}` critiques, `{vulns_elevee.count()}` élevées)\n\n"
+            f"{latest_info}\n\n"
+            "💡 Vous pouvez effectuer un diff d'évolution entre 2 audits en cliquant sur le bouton **Analyse Comparative (Diff)**."
+        )
+        suggested_actions = ["📊 Comparer 2 Audits", "🚨 Failles Critiques", "📈 Tendances des Scores"]
+
+    elif any(k in user_msg_lower for k in ['faille', 'vulnérabilité', 'vulnerabilite', 'critique', 'danger', 'cwe', 'cvss', 'top', 'grave']):
+        crit_list = ""
+        for v in vulns_critique[:3]:
+            target_str = v.audit.cible.valeur if (v.audit and v.audit.cible) else 'Cible'
+            crit_list += f"• 🔴 **[{v.gravite}] {v.titre}** (CVSS `{v.scoreCVSS}`) sur `{target_str}` - Code: `{v.codeCWE}`\n"
+        for v in vulns_elevee[:2]:
+            target_str = v.audit.cible.valeur if (v.audit and v.audit.cible) else 'Cible'
+            crit_list += f"• 🟠 **[{v.gravite}] {v.titre}** (CVSS `{v.scoreCVSS}`) sur `{target_str}` - Code: `{v.codeCWE}`\n"
+
+        if not crit_list:
+            crit_list = "✅ Aucune vulnérabilité critique ou élevée n'est actuellement répertoriée dans la base !"
+
+        reply = (
+            f"🚨 **Analyse des Vulnérabilités les plus Critiques :**\n\n"
+            f"{crit_list}\n\n"
+            "🤖 **Conseil IA Copilot** : Dans l'onglet **Vulnérabilités**, vous pouvez cliquer sur le bouton **🤖 Copilot IA** à côté de n'importe quelle vulnérabilité pour générer immédiatement un snippet de patch correctif et la commande de test CLI."
+        )
+        suggested_actions = ["🛡️ Ouvrir l'onglet Vulnérabilités", "🤖 Tester Copilot IA", "🚀 Lancer un Audit"]
+        target_tab = "vulns"
+
+    elif any(k in user_msg_lower for k in ['projet', 'cible', 'ajouter projet', 'créer projet', 'domaine', 'ip', 'url']):
+        reply = (
+            "📁 **Gestion des Projets & Cibles d'Évaluation :**\n\n"
+            "1. Allez dans l'onglet **Projets & Cibles** (`#tab-projects`).\n"
+            "2. **Pour créer un projet** : Remplissez le nom et l'organisation dans le formulaire de gauche.\n"
+            "3. **Pour ajouter une cible** : Sélectionnez le projet puis indiquez l'URL/IP (ex: `https://votre-site.com`).\n"
+            "4. **Autorisations d'évaluation** : Importez un certificat ou une autorisation d'audit signée."
+        )
+        suggested_actions = ["📁 Ouvrir Projets & Cibles", "🚀 Lancer un Audit", "📊 Tableau de bord"]
+        target_tab = "projects"
+
+    elif any(k in user_msg_lower for k in ['rapport', 'pdf', 'export', 'marque blanche', 'logo', 'personnaliser', 'couleur']):
+        reply = (
+            "🎨 **Personnalisation & Rapports en Marque Blanche :**\n\n"
+            "1. Rendez-vous dans **Mon Profil** (`#tab-profile`).\n"
+            "2. Dans la section **🎨 Personnalisation Marque Blanche** :\n"
+            "   - Indiquez le **Nom de votre entreprise**.\n"
+            "   - Renseignez l'**URL du logo** de votre marque.\n"
+            "   - Choisissez la **Couleur thématique** du PDF.\n"
+            "   - Rédigez votre **Pied de page / Mention légale**.\n"
+            "3. Les rapports PDF générés à la fin des audits intégreront automatiquement votre identité visuelle !"
+        )
+        suggested_actions = ["🎨 Ouvrir Mon Profil", "📥 Exporter iCal", "📄 Voir les Rapports"]
+        target_tab = "profile"
+
+    elif any(k in user_msg_lower for k in ['notification', 'slack', 'telegram', 'discord', 'email', 'webhook']):
+        reply = (
+            "🔔 **Notifications Multi-Canaux en Direct :**\n\n"
+            "• Les rapports PDF d'audit sont envoyés **automatiquement par email** à la fin de chaque scan.\n"
+            "• Dans l'onglet **Notifications** (`#tab-notifs`), vous pouvez configurer vos **Webhooks Slack**, **Discord** et **Telegram Bot API** pour recevoir les alerte en temps réel.\n"
+            "• Utilisez le bouton **🧪 Envoi de Notification de Test** pour vérifier la connexion."
+        )
+        suggested_actions = ["🔔 Configurer les Notifications", "🚀 Lancer un Audit"]
+        target_tab = "notifs"
+
+    else:
+        reply = (
+            "👋 **Bonjour ! Je suis l'Assistant IA SecEval.**\n\n"
+            "Je peux vous guider dans l'utilisation du logiciel et analyser vos résultats de sécurité en temps réel :\n\n"
+            "• **Manipulation** : *Comment démarrer un audit ?*, *Comment ajouter un projet ?*, *Comment personnaliser les PDF ?*\n"
+            "• **Analyses** : *Quel est notre score moyen ?*, *Quelles failles sont critiques ?*, *Quels sont les résultats du dernier scan ?*\n\n"
+            "Que souhaitez-vous savoir ou effectuer ?"
+        )
+        suggested_actions = ["🚀 Comment lancer un audit ?", "📊 Analyse des résultats", "🚨 Failles critiques", "🎨 Personnaliser les PDF"]
+
+    return json_response({
+        'reply': reply,
+        'suggested_actions': suggested_actions,
+        'target_tab': target_tab,
+        'agent': 'SecEval Assistant IA Core'
+    })
+
+

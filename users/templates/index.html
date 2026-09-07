@@ -3607,6 +3607,156 @@
             </div>
         </div>
     </div>
+
+    <!-- CHATBOT FLOATING ACTION BUTTON -->
+    <div id="chatbot-fab" onclick="toggleChatbot()" style="position:fixed; bottom:25px; right:25px; z-index:99999; cursor:pointer; background: linear-gradient(135deg, #6366f1, #8b5cf6); color:white; padding:12px 20px; border-radius:30px; box-shadow:0 8px 25px rgba(99,102,241,0.45); display:flex; align-items:center; gap:10px; font-weight:600; transition:all 0.3s ease; border: 1px solid rgba(255,255,255,0.2);">
+        <span style="font-size:1.4rem;">🤖</span>
+        <span>Assistant IA</span>
+        <span style="background:#ef4444; color:white; font-size:0.7rem; padding:2px 6px; border-radius:10px; font-weight:bold;">LIVE</span>
+    </div>
+
+    <!-- CHATBOT DRAWER PANEL -->
+    <div id="chatbot-drawer" style="display:none; position:fixed; bottom:90px; right:25px; width:410px; max-width:92vw; height:580px; max-height:82vh; background:var(--card-bg, #1e293b); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:16px; box-shadow:0 15px 35px rgba(0,0,0,0.45); z-index:99999; flex-direction:column; overflow:hidden;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #6366f1, #8b5cf6); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🤖</div>
+                <div>
+                    <h4 style="margin:0; color:white; font-size:1rem;">SecEval AI Assistant</h4>
+                    <small style="color:#a5b4fc; font-size:0.75rem;">● En ligne • Gemini Security Core</small>
+                </div>
+            </div>
+            <button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer; padding:4px 8px;">✕</button>
+        </div>
+
+        <!-- Messages area -->
+        <div id="chatbot-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; font-size:0.9rem; line-height:1.5;">
+            <!-- Initial AI Welcome -->
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+                <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-color, #f8fafc); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:12px 14px; border-radius:12px; max-width:85%;">
+                    Bonjour ! Je suis l'<strong>Assistant IA SecEval</strong>. Je peux vous guider dans la manipulation du logiciel et analyser en direct vos résultats d'audit et failles critiques.
+                </div>
+            </div>
+            <!-- Quick Chips -->
+            <div id="chatbot-quick-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-left:38px;">
+                <button onclick="quickSendChat('Comment démarrer un audit ?')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🚀 Comment démarrer un audit ?</button>
+                <button onclick="quickSendChat('Analyse mes derniers résultats')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">📊 Analyse des résultats</button>
+                <button onclick="quickSendChat('Quelles failles sont les plus critiques ?')" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🚨 Failles critiques</button>
+                <button onclick="quickSendChat('Comment personnaliser les rapports PDF ?')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.78rem; cursor:pointer;">🎨 Marque Blanche PDF</button>
+            </div>
+        </div>
+
+        <!-- Input area -->
+        <div style="padding:12px; background:var(--bg-secondary, #0f172a); border-top:1px solid var(--border-color, rgba(255,255,255,0.1)); display:flex; gap:8px;">
+            <input type="text" id="chatbot-input" placeholder="Posez une question à l'IA..." style="flex:1; background:var(--bg-tertiary, #1e293b); color:var(--text-color, white); border:1px solid var(--border-color, rgba(255,255,255,0.15)); padding:10px 12px; border-radius:8px; font-size:0.9rem;" onkeypress="if(event.key==='Enter') sendChatbotMessage()">
+            <button onclick="sendChatbotMessage()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer;">⚡</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleChatbot() {
+            const drawer = document.getElementById('chatbot-drawer');
+            if (drawer.style.display === 'none' || !drawer.style.display) {
+                drawer.style.display = 'flex';
+                document.getElementById('chatbot-input').focus();
+            } else {
+                drawer.style.display = 'none';
+            }
+        }
+
+        function quickSendChat(text) {
+            document.getElementById('chatbot-input').value = text;
+            sendChatbotMessage();
+        }
+
+        async function sendChatbotMessage() {
+            const input = document.getElementById('chatbot-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('chatbot-messages');
+
+            container.innerHTML += `
+                <div style="display:flex; justify-content:flex-end;">
+                    <div style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:white; padding:10px 14px; border-radius:12px; max-width:85%; word-break:break-word;">
+                        ${escapeHtml(msg)}
+                    </div>
+                </div>
+            `;
+
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            const typingId = 'typing-' + Date.now();
+            container.innerHTML += `
+                <div id="${typingId}" style="display:flex; gap:10px; align-items:flex-start;">
+                    <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                    <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-muted); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:10px 14px; border-radius:12px;">
+                        <span class="spinner" style="display:inline-block; width:12px; height:12px; margin-right:6px;"></span> L'Assistant réfléchit...
+                    </div>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const res = await fetch('/api/users/chatbot/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                if (!res.ok) {
+                    container.innerHTML += `
+                        <div style="display:flex; gap:10px; align-items:flex-start;">
+                            <div style="background:red; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;">⚠️</div>
+                            <div style="background:#450a0a; color:#fca5a5; padding:10px 14px; border-radius:12px;">
+                                ${data.error || 'Erreur du serveur.'}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let formattedReply = escapeHtml(data.reply || '')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px; font-family:monospace;">$1</code>')
+                    .replace(/\n/g, '<br>');
+
+                let chipsHtml = '';
+                if (data.suggested_actions && data.suggested_actions.length > 0) {
+                    chipsHtml = '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">' +
+                        data.suggested_actions.map(act => `<button onclick="quickSendChat('${escapeHtml(act)}')" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:15px; font-size:0.75rem; cursor:pointer;">${escapeHtml(act)}</button>`).join('') +
+                        '</div>';
+                }
+
+                container.innerHTML += `
+                    <div style="display:flex; gap:10px; align-items:flex-start;">
+                        <div style="background:linear-gradient(135deg, #6366f1, #8b5cf6); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0;">🤖</div>
+                        <div style="background:var(--bg-tertiary, #0f172a); color:var(--text-color, #f8fafc); border:1px solid var(--border-color, rgba(255,255,255,0.1)); padding:12px 14px; border-radius:12px; max-width:85%;">
+                            ${formattedReply}
+                            ${chipsHtml}
+                        </div>
+                    </div>
+                `;
+
+                if (data.target_tab && typeof switchTab === 'function') {
+                    switchTab(data.target_tab);
+                }
+
+                container.scrollTop = container.scrollHeight;
+
+            } catch(e) {
+                console.error(e);
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+            }
+        }
+    </script>
 </body>
 </html>
 
