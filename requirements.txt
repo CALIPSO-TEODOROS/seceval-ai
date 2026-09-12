@@ -10,6 +10,7 @@ tzdata>=2024.1
 requests>=2.31.0
 urllib3>=2.2.0
 
-# Support optionnel pour génération PDF & exports avancés
-# reportlab>=4.1.0
+# Support pour génération PDF & exports avancés
+reportlab>=4.1.0
+markdown>=3.5
 # openpyxl>=3.1.2

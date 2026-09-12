@@ -420,11 +420,11 @@ def audit_etape_update_view(request, etape_id):
 
 def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
     """
-    Envoie automatiquement un email avec le rapport d'audit en pièce jointe 
+    Envoie automatiquement un email (HTML & texte) avec le rapport d'audit PDF binaire en pièce jointe 
     aux adresses emails configurées dans audit.emailsNotification (ou à l'utilisateur qui a lancé l'audit).
     Crée également l'enregistrement de notification correspondant en base.
     """
-    from django.core.mail import EmailMessage
+    from django.core.mail import EmailMultiAlternatives
     from notifications_app.models import Notification, CanalNotification
     from users.models import Utilisateur
     import smtplib
@@ -455,6 +455,8 @@ def send_audit_completion_notifications(audit, rapport_obj=None, filepath=None):
     cible_valeur = audit.cible.valeur if audit.cible else 'N/A'
     cible_type = audit.cible.get_type_display() if audit.cible else 'N/A'
     type_display = audit.get_type_display() if hasattr(audit, 'get_type_display') else audit.type
+    score = audit.scoreSecurite
+    score_color = "#22c55e" if score >= 80 else ("#f59e0b" if score >= 50 else "#ef4444")
 
     body_text = f"""Bonjour,
 
@@ -465,27 +467,64 @@ L'audit de sécurité SecEval AI est terminé avec succès. Retrouvez ci-dessous
 - Titre : {titre_audit}
 - Cible : {cible_valeur} ({cible_type})
 - Type d'audit : {type_display}
-- Score de sécurité : {audit.scoreSecurite}/100
+- Score de sécurité : {score}/100
 - Statut : {audit.get_statut_display()}
 - Date de création : {date_crea_str}
 - Date de fin : {date_fin_str}
-- Destinataires : {', '.join(recipients)}
 
-Le rapport d'évaluation complet est joint à ce courrier électronique.
+Le rapport d'évaluation complet au format PDF est joint à ce courrier électronique.
 
 Cordialement,
 L'équipe SecEval AI
 """
 
+    html_body = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body {{ font-family: system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }}
+.card {{ background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; max-width: 650px; margin: 0 auto; }}
+.header {{ font-size: 1.4rem; color: #38bdf8; font-weight: bold; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 10px; }}
+.info-row {{ margin: 8px 0; font-size: 0.95rem; display: flex; justify-content: space-between; }}
+.score-badge {{ background-color: #0f172a; color: {score_color}; padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; display: inline-block; margin-top: 10px; }}
+.footer {{ margin-top: 24px; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 12px; }}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="header">🛡️ SecEval AI — Audit Terminé</div>
+    <p>Bonjour,</p>
+    <p>L'audit de sécurité automatisé sur la cible <strong>{cible_valeur}</strong> a été finalisé.</p>
+    <div style="background-color: #0f172a; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <div style="color: #94a3b8; font-size: 0.8rem; text-transform: uppercase;">Score de Sécurité Global</div>
+        <div class="score-badge">{score} / 100</div>
+    </div>
+    <ul style="line-height: 1.8; color: #cbd5e1;">
+        <li><strong>Titre :</strong> {titre_audit}</li>
+        <li><strong>Cible :</strong> {cible_valeur} ({cible_type})</li>
+        <li><strong>Type :</strong> {type_display}</li>
+        <li><strong>Date de fin :</strong> {date_fin_str}</li>
+    </ul>
+    <p style="margin-top: 20px;">📄 <em>Le rapport officiel complet au format PDF est disponible en pièce jointe de ce mail.</em></p>
+    <div class="footer">
+        SecEval AI • Plateforme de Red Teaming Automatisé basés sur des Agents IA Autonomes
+    </div>
+</div>
+</body>
+</html>
+"""
+
     email_sent = False
-    # Tentative 1: Backend Email Django standard
+    # Tentative 1: Backend Email Django standard (EmailMultiAlternatives)
     try:
-        email = EmailMessage(
+        email = EmailMultiAlternatives(
             subject=subject,
             body=body_text,
             from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech'),
             to=recipients
         )
+        email.attach_alternative(html_body, "text/html")
         if filepath and os.path.exists(filepath):
             email.attach_file(filepath)
         email.send(fail_silently=False)
@@ -496,11 +535,13 @@ L'équipe SecEval AI
     # Tentative 2: Postfix local (localhost:25) en fallback si le premier serveur échoue
     if not email_sent:
         try:
-            msg = MIMEMultipart()
+            msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@secu.zendaya.tech')
             msg['To'] = ', '.join(recipients)
+
             msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
             if filepath and os.path.exists(filepath):
                 with open(filepath, 'rb') as f:
@@ -606,6 +647,7 @@ def audit_callback_n8n_view(request, audit_id=None):
 
         # 2. Enregistrer TOUJOURS un rapport d'évaluation (PDF/HTML) pour cet audit
         from reports.models import Rapport, FormatRapport, StatutRapport
+        from reports.pdf_generator import generate_pdf_report
         dir_path = os.path.join(settings.BASE_DIR, 'media', 'reports')
         os.makedirs(dir_path, exist_ok=True)
 
@@ -632,32 +674,11 @@ def audit_callback_n8n_view(request, audit_id=None):
 
         if not rapport_text:
             vulns_list = audit.vulnerabilites.all()
-            vulns_summary = "<br>".join([f"• [{v.gravite}] {v.titre} (CVSS {v.scoreCVSS})" for v in vulns_list]) if vulns_list.exists() else "Aucune vulnérabilité critique détectée."
-            rapport_text = f"Audit de sécurité '{audit.titre or audit.cible.valeur}' finalisé avec succès par l'agent IA SecEval n8n.<br>Score Global: {audit.scoreSecurite}/100.<br><br><strong>Synthèse des Vulnérabilités:</strong><br>{vulns_summary}"
+            vulns_summary = "\n".join([f"• [{v.gravite}] {v.titre} (CVSS {v.scoreCVSS})" for v in vulns_list]) if vulns_list.exists() else "Aucune vulnérabilité critique détectée."
+            rapport_text = f"Audit de sécurité '{audit.titre or audit.cible.valeur}' finalisé avec succès par l'agent IA SecEval n8n.\nScore Global: {audit.scoreSecurite}/100.\n\n**Synthèse des Vulnérabilités:**\n{vulns_summary}"
 
-        rapport_html_body = str(rapport_text).replace('\n', '<br>')
-        html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>{new_rapport.titre}</title>
-<style>
-body {{ font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; background: #0f172a; color: #f8fafc; }}
-pre {{ background: #1e293b; padding: 15px; border-radius: 8px; overflow-x: auto; }}
-h1, h2, h3 {{ color: #38bdf8; }}
-hr {{ border-color: #334155; }}
-</style>
-</head>
-<body>
-<h1>🛡️ {new_rapport.titre}</h1>
-<p><strong>Cible d'évaluation :</strong> {audit.cible.valeur if audit.cible else 'N/A'}</p>
-<p><strong>Score Final :</strong> {audit.scoreSecurite} / 100</p>
-<hr>
-<div>{rapport_html_body}</div>
-</body>
-</html>"""
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(html_content)
+        # Générer un VRAI fichier PDF binaire structuré via ReportLab
+        generate_pdf_report(new_rapport, filepath, report_text=rapport_text)
 
         new_rapport.cheminFichier = filepath
         new_rapport.save(update_fields=['cheminFichier'])

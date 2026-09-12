@@ -204,6 +204,7 @@ def report_telecharger_view(request, report_id):
         response = HttpResponse(content, content_type=content_types.get(r.format, 'text/plain'))
         ext = r.format.lower()
         response['Content-Disposition'] = f'{disposition}; filename="rapport_audit_{r.id}.{ext}"'
+        response['Content-Length'] = str(len(content))
         return response
     except Rapport.DoesNotExist:
         return json_response({'error': 'Rapport introuvable.'}, status=404)

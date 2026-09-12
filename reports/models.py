@@ -112,24 +112,13 @@ class Rapport(models.Model):
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.writelines(lines)
 
-        else:  # HTML / PDF
-            html_content = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>{self.titre}</title></head>
-<body style="font-family: sans-serif; padding: 20px;">
-  <h1>🛡️ {self.titre}</h1>
-  <p><strong>Cible d'évaluation :</strong> {self.audit.cible.valeur}</p>
-  <p><strong>Score Final de Sécurité :</strong> {self.scoreFinal} / 100</p>
-  <hr>
-  <h2>Vulnérabilités Détectées ({vulns.count()})</h2>
-  <ul>
-"""
-            for v in vulns:
-                html_content += f"<li><strong>[{v.gravite}] {v.titre}</strong> (CVSS {v.scoreCVSS} - {v.codeCWE})</li>\n"
-            html_content += "</ul></body></html>"
+        elif self.format == FormatRapport.HTML:
+            from .pdf_generator import generate_html_report
+            generate_html_report(self, filepath)
 
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(html_content)
+        elif self.format == FormatRapport.PDF:
+            from .pdf_generator import generate_pdf_report
+            generate_pdf_report(self, filepath)
 
         self.cheminFichier = filepath
         self.save(update_fields=['scoreFinal', 'statut', 'cheminFichier'])
@@ -148,8 +137,13 @@ class Rapport(models.Model):
         return self
 
     def telecharger(self):
-        """Méthode métier telecharger() : renvoie le contenu du fichier généré."""
+        """Méthode métier telecharger() : renvoie le contenu binaire ou texte du fichier généré."""
         if not self.cheminFichier or not os.path.exists(self.cheminFichier):
             self.generer()
-        with open(self.cheminFichier, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read()
+
+        if self.format == FormatRapport.PDF:
+            with open(self.cheminFichier, 'rb') as f:
+                return f.read()
+        else:
+            with open(self.cheminFichier, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
